@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
 
 const router = useRouter()
-const bannerRef = ref<HTMLDivElement | null>(null)
 const leftShoeRef = ref<HTMLDivElement | null>(null)
 const centerContentRef = ref<HTMLDivElement | null>(null)
 const rightShoeRef = ref<HTMLDivElement | null>(null)

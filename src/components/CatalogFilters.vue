@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+interface Props {
+  selectedCategory?: string | null
+  sortBy?: string
+}
 
-defineProps({
-  selectedCategory: {
-    type: String,
-    default: null,
-  },
-  sortBy: {
-    type: String,
-    default: 'nombre',
-  },
+withDefaults(defineProps<Props>(), {
+  selectedCategory: null,
+  sortBy: 'nombre',
 })
 
-const emit = defineEmits(['update:selectedCategory', 'update:sortBy'])
+const emit = defineEmits<{
+  'update:selectedCategory': [value: string | null]
+  'update:sortBy': [value: string]
+}>()
 
 const categories = [
   { id: 'sneakers', name: 'Sneakers' },

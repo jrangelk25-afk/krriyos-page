@@ -3,18 +3,16 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
-import { useGSAP } from '../composables/useGSAP'
+import gsap from 'gsap'
 import ProductCard from '../components/ProductCard.vue'
 import CatalogFilters from '../components/CatalogFilters.vue'
 
 const route = useRoute()
 const products = useProducts()
 const cart = useCart()
-const gsap = useGSAP()
 
 const selectedCategory = ref<string | null>(null)
 const sortBy = ref<string>('nombre')
-const catalogContainer = ref<HTMLDivElement | null>(null)
 const isLoading = ref(false)
 
 onMounted(() => {

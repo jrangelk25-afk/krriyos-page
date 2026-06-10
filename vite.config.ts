@@ -15,9 +15,13 @@ export default defineConfig({
     minify: 'terser',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vue-vendor': ['vue', 'vue-router'],
-          'pinia-vendor': ['pinia'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules/vue') || id.includes('node_modules/vue-router')) {
+            return 'vue-vendor'
+          }
+          if (id.includes('node_modules/pinia')) {
+            return 'pinia-vendor'
+          }
         },
       },
     },
