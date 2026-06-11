@@ -1,7 +1,10 @@
 # Netlify Configuration for Vite + Vue 3 SPA
 
 [build]
-  command = "npm install && npm run build"
+  command="npm install"
+
+[build]
+  command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
 
