@@ -7,7 +7,7 @@ import gsap from 'gsap'
 const router = useRouter()
 const gsapComposable = useGSAP()
 
-const heroImages = ['/hero1.png', '/hero2.png', '/hero3.png']
+const heroImages = ['/hero1.png', '/hero2.png', '/hero3.png', '/hero4.png']
 const currentImageIndex = ref(0)
 const imageOpacity = ref(1)
 

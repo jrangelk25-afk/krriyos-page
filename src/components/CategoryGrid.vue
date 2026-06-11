@@ -82,7 +82,7 @@ onMounted(() => {
           >
             <div class="border-4 md:border-6 border-secondary overflow-hidden bg-white aspect-square flex items-center justify-center p-2 md:p-3">
               <img 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8ZXuke-5GLKlgj3uifVBb-Y0nXRA8U4C6WgIJQoQMfeQRhjsydEyDNKVlE6IueLAiBHWmno5QFe-wpSoxs7liPKnnIJP1D6s2aR4nLivUtuacUDPg00dKwKTe8Ujd5MUIgXhn5XdXuAfg5VOazug3fOE5kaoxM3wyAR3L68hDo_k7QkrOsAJzhKJq10T53ORch7MknFhZryma5cl1HztRpJu_Z9y9A7y56JW3lwBRn3KYee_d8eecbZzEbXkHWVJfNYWdwpXHyIi0"
+                src="/category-l.png"
                 alt="Producto izquierda"
                 class="w-full h-full object-contain"
               />
@@ -117,7 +117,7 @@ onMounted(() => {
           >
             <div class="border-4 md:border-6 border-secondary overflow-hidden bg-white aspect-square flex items-center justify-center p-2 md:p-3">
               <img 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8ZXuke-5GLKlgj3uifVBb-Y0nXRA8U4C6WgIJQoQMfeQRhjsydEyDNKVlE6IueLAiBHWmno5QFe-wpSoxs7liPKnnIJP1D6s2aR4nLivUtuacUDPg00dKwKTe8Ujd5MUIgXhn5XdXuAfg5VOazug3fOE5kaoxM3wyAR3L68hDo_k7QkrOsAJzhKJq10T53ORch7MknFhZryma5cl1HztRpJu_Z9y9A7y56JW3lwBRn3KYee_d8eecbZzEbXkHWVJfNYWdwpXHyIi0"
+                src="/category-r.png"
                 alt="Producto derecha"
                 class="w-full h-full object-contain"
               />

@@ -32,7 +32,7 @@ const routes = [
     name: 'Checkout',
     component: CheckoutView,
     beforeEnter: (_to: any, _from: any, next: any) => {
-      const cartData = localStorage.getItem('krrillos_cart')
+      const cartData = localStorage.getItem('krriyos_cart')
       if (cartData) {
         try {
           const { items } = JSON.parse(cartData)

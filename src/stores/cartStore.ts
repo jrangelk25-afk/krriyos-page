@@ -9,7 +9,7 @@ export const useCartStore = defineStore('cart', () => {
   // Inicializar desde localStorage
   const loadCart = () => {
     try {
-      const saved = localStorage.getItem('krrillos_cart')
+      const saved = localStorage.getItem('krriyos_cart')
       if (saved) {
         const data = JSON.parse(saved)
         items.value = data.items || []
@@ -22,7 +22,7 @@ export const useCartStore = defineStore('cart', () => {
   // Persistir en localStorage
   const saveCart = () => {
     try {
-      localStorage.setItem('krrillos_cart', JSON.stringify({ items: items.value }))
+      localStorage.setItem('krriyos_cart', JSON.stringify({ items: items.value }))
     } catch (error) {
       console.error('Error guardando carrito:', error)
     }

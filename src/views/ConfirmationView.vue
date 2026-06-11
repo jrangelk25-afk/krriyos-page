@@ -7,7 +7,7 @@ const router = useRouter()
 const order = ref<Order | null>(null)
 
 onMounted(() => {
-  const orderData = sessionStorage.getItem('krrillos_order')
+  const orderData = sessionStorage.getItem('krriyos_order')
   if (orderData) {
     try {
       order.value = JSON.parse(orderData)
@@ -21,7 +21,7 @@ onMounted(() => {
 })
 
 const continueShopping = () => {
-  sessionStorage.removeItem('krrillos_order')
+  sessionStorage.removeItem('krriyos_order')
   router.push('/')
 }
 </script>

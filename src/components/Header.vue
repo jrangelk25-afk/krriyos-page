@@ -18,10 +18,10 @@ const toggleCart = () => cartStore.toggleDrawer()
       <button 
         @click="goHome" 
         class="h-8 hover:opacity-80 transition-opacity"
-        aria-label="krrillos - volver a inicio"
+        aria-label="krriyos - volver a inicio"
       >
         <img 
-          alt="krrillos logo" 
+          alt="krriyos logo" 
           class="h-full object-contain" 
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbNLkdUzYnqQPzJlRaRwwYgZ7UCDB4OpqdWTRiI997yYRmYOmElaIzT6VpuqLlXQ-LJIZEg-geJnmp8vt-TRemQrdXLr8qt7IGkWOo8Rytf09-iCiH9CSBZyRCQDS88-Nv8fnyTMPn0gnL4ew1mAcwDhVYTAquU9s40mmxPzdEuHQTwUK8X_qOSRMNtmMd11EKUWLYbhpP8pyEhfn_dLF4czGO9ha_boMtjqW3-V7F2vyWM8iQKrRFVz6H52u0WgaRv4MEj7Ijs8uV"
         />

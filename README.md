@@ -1,8 +1,8 @@
-# krrillos | E-Commerce MVP
+# krriyos | E-Commerce MVP
 
 **Calzado Premium de Alto Rendimiento**
 
-Una tienda en línea moderna construida con Vue 3, Vite y Tailwind CSS para la marca premium krrillos.
+Una tienda en línea moderna construida con Vue 3, Vite y Tailwind CSS para la marca premium krriyos.
 
 ---
 
@@ -16,7 +16,7 @@ Una tienda en línea moderna construida con Vue 3, Vite y Tailwind CSS para la m
 
 ```bash
 # Clonar o descargar el proyecto
-cd krrillos
+cd krriyos
 
 # Instalar dependencias
 npm install
@@ -508,7 +508,7 @@ Para problemas o preguntas:
 
 ## 📄 Licencia
 
-© 2024 krrillos. Todos los derechos reservados.
+© 2024 krriyos. Todos los derechos reservados.
 
 ---
 

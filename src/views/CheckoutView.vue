@@ -33,7 +33,7 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
     }
 
     // Guardar en sessionStorage (no localStorage para privacidad)
-    sessionStorage.setItem('krrillos_order', JSON.stringify(order))
+    sessionStorage.setItem('krriyos_order', JSON.stringify(order))
 
     // Limpiar carrito
     cartStore.clearCart()
