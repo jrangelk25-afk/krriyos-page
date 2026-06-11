@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
+import categoryL from '/category-l.webp?url'
+import categoryR from '/category-r.webp?url'
 
 const router = useRouter()
 const leftShoeRef = ref<HTMLDivElement | null>(null)
@@ -82,7 +84,7 @@ onMounted(() => {
           >
             <div class="border-4 md:border-6 border-secondary overflow-hidden bg-white aspect-square flex items-center justify-center p-2 md:p-3">
               <img 
-                src="/category-l.png"
+                :src="categoryL"
                 alt="Producto izquierda"
                 class="w-full h-full object-contain"
               />
@@ -117,7 +119,7 @@ onMounted(() => {
           >
             <div class="border-4 md:border-6 border-secondary overflow-hidden bg-white aspect-square flex items-center justify-center p-2 md:p-3">
               <img 
-                src="/category-r.png"
+                :src="categoryR"
                 alt="Producto derecha"
                 class="w-full h-full object-contain"
               />

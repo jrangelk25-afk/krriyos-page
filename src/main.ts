@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, nextTick } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import './style.css'
@@ -57,6 +57,15 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+  scrollBehavior(_to, _from, _savedPosition) {
+    return { top: 0, left: 0 }
+  },
+})
+
+// Backup: Reset scroll al cambiar de ruta con nextTick
+router.afterEach(async () => {
+  await nextTick()
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
 })
 
 const app = createApp(App)

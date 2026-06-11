@@ -3,11 +3,14 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGSAP } from '../composables/useGSAP'
 import gsap from 'gsap'
+import hero1 from '/hero1.webp?url'
+import hero2 from '/hero2.webp?url'
+import hero3 from '/hero3.webp?url'
 
 const router = useRouter()
 const gsapComposable = useGSAP()
 
-const heroImages = ['/hero1.png', '/hero2.png', '/hero3.png', '/hero4.png']
+const heroImages = [hero1, hero2, hero3]
 const currentImageIndex = ref(0)
 const imageOpacity = ref(1)
 
