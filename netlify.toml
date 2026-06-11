@@ -10,7 +10,7 @@
   NODE_VERSION = "20"
 
 [context.production]
-  command = "npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
   environment = { NODE_ENV = "production" }
 
 [context.deploy-preview]
