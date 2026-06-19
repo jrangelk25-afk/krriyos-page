@@ -5,9 +5,9 @@ const isOpen = ref(false)
 
 const socialLinks = {
   instagram: 'https://www.instagram.com/krriyos.k/',
+  tiktok: 'https://vt.tiktok.com/ZSQvXMVXc/',
   facebook: '',
   twitter: '',
-  tiktok: ''
 }
 
 const openSocial = (platform: string) => {
@@ -73,10 +73,9 @@ const toggleMenu = () => {
         <button
           v-if="socialLinks.tiktok"
           @click="openSocial('tiktok')"
-          class="w-12 h-12 bg-gray-400 text-white rounded-full flex items-center justify-center hover:shadow-lg transition-all transform hover:scale-110 opacity-50 cursor-not-allowed"
-          title="TikTok (próximamente)"
-          aria-label="TikTok"
-          disabled
+          class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center hover:shadow-lg transition-all transform hover:scale-110"
+          title="TikTok"
+          aria-label="Seguir en TikTok"
         >
           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.66 1.94 2.89 2.89 0 015.66-1.93V9.01a8.41 8.41 0 00-7.56 4.07 8.35 8.35 0 0013.6 2.7V9.27a11.86 11.86 0 003.39.29v-3.61c-1.25.06-2.29.02-3.59-.02Z"/>

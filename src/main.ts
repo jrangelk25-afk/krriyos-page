@@ -1,8 +1,9 @@
-import { createApp, nextTick } from 'vue'
+import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import './style.css'
 import App from './App.vue'
+import { useScrollBehavior } from './composables/useScrollBehavior'
 
 // Views
 import HomeView from './views/HomeView.vue'
@@ -54,18 +55,63 @@ const routes = [
   },
 ]
 
+// Inicializar composable de scroll
+const scrollBehaviorComposable = useScrollBehavior()
+
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior(_to, _from, _savedPosition) {
-    return { top: 0, left: 0 }
-  },
 })
 
-// Backup: Reset scroll al cambiar de ruta con nextTick
-router.afterEach(async () => {
-  await nextTick()
-  window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+/**
+ * Obtener la posición de scroll actual
+ */
+const getCurrentScroll = () => {
+  return Math.max(
+    window.scrollY,
+    document.documentElement.scrollTop,
+    document.body.scrollTop
+  )
+}
+
+/**
+ * Hacer scroll a una posición específica
+ */
+const setScrollPosition = (top: number) => {
+  window.scrollTo(0, top)
+  document.documentElement.scrollTop = top
+  document.body.scrollTop = top
+}
+
+/**
+ * FLUJO CORRECTO:
+ * 1. Restaurar posición de la NUEVA ruta (si existe)
+ * 2. Guardar posición de la ANTERIOR ruta
+ * 3. Confirmar en afterEach
+ */
+
+/**
+ * beforeResolve - Se ejecuta ANTES de cambiar la ruta
+ * Orden CORRECTO:
+ *   1. PRIMERO: Guardar scroll de la ruta ANTERIOR (ANTES de cambiar)
+ *   2. LUEGO: Restaurar scroll de la ruta NUEVA
+ */
+router.beforeResolve((to, from) => {
+  const currentScroll = getCurrentScroll()
+  
+  // PASO 1: PRIMERO guardar la posición de la ruta ANTERIOR (antes de que cambie todo)
+  if (from.path && currentScroll > 0) {
+    scrollBehaviorComposable.saveScrollPosition(from.path)
+  }
+  
+  // PASO 2: LUEGO restaurar la posición de la NUEVA ruta
+  const savedPositionNewRoute = scrollBehaviorComposable.getScrollPosition(to.path)
+  
+  if (savedPositionNewRoute) {
+    setScrollPosition(savedPositionNewRoute.top)
+  } else {
+    setScrollPosition(0)
+  }
 })
 
 const app = createApp(App)
