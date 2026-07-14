@@ -12,6 +12,14 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value)
+}
+
 const goToDetail = () => {
   router.push(`/producto/${props.product.id}`)
 }
@@ -41,7 +49,10 @@ const handleAddToCart = (e: Event) => {
         <div v-if="product.isNewArrival" class="bg-secondary text-on-secondary text-[10px] font-bold px-3 py-1 rounded-full">
           NUEVO
         </div>
-        <div v-if="product.stock <= 0" class="bg-error text-on-error text-[10px] font-bold px-3 py-1 rounded-full">
+        <div v-if="product.isOutlet" class="bg-error text-on-error text-[10px] font-bold px-3 py-1 rounded-full">
+          OUTLET
+        </div>
+        <div v-if="product.stock <= 0" class="bg-on-surface-variant text-surface-variant text-[10px] font-bold px-3 py-1 rounded-full">
           AGOTADO
         </div>
       </div>
@@ -53,7 +64,7 @@ const handleAddToCart = (e: Event) => {
         {{ product.sku }} {{ product.nombre }}
       </h4>
       <p class="font-body-md text-body-md text-on-surface-variant">
-        ${{ product.precio.toFixed(2) }}
+        {{ formatCurrency(product.precio) }}
       </p>
       <p class="font-body-md text-body-md text-on-surface-variant text-sm">
         {{ product.categoria }}

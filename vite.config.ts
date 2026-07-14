@@ -1,33 +1,25 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
+import { fileURLToPath } from 'node:url'
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
   },
-  build: {
-    target: 'esnext',
-    minify: 'terser',
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules/vue') || id.includes('node_modules/vue-router')) {
-            return 'vue-vendor'
-          }
-          if (id.includes('node_modules/pinia')) {
-            return 'pinia-vendor'
-          }
-        },
-      },
-    },
+  css: {
+    postcss: './postcss.config.js'
   },
   server: {
-    port: 5173,
-    strictPort: false,
-  },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
+      }
+    }
+  }
 })

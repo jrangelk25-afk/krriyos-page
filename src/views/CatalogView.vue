@@ -13,14 +13,32 @@ const cart = useCart()
 
 const selectedCategory = ref<string | null>(null)
 const sortBy = ref<string>('nombre')
+const showOutlet = ref(false)
+const showNewArrivals = ref(false)
 const isLoading = ref(false)
+const componentMounted = ref(false)
 
-onMounted(() => {
-  // Check if there's a category filter in the URL
-  if (route.query.categoria) {
-    selectedCategory.value = route.query.categoria as string
-    products.filterByCategory(selectedCategory.value)
+onMounted(async () => {
+  // Cargar datos desde la BD si no están cargados
+  if (products.allProducts.length === 0) {
+    await products.initializeData()
   }
+
+  // Check URL query parameters y aplicar filtros
+  if (route.query.category) {
+    const categoryId = route.query.category as string
+    selectedCategory.value = categoryId
+    products.filterByCategory(categoryId)
+  } else if (route.query.outlet === 'true') {
+    showOutlet.value = true
+    products.applyFilter({ isOutlet: true as any })
+  } else if (route.query.new === 'true') {
+    showNewArrivals.value = true
+    products.applyFilter({ isNew: true as any })
+  }
+
+  // Marcar como montado para evitar que watchers se disparen durante setup
+  componentMounted.value = true
 
   // Initial animation
   nextTick(() => {
@@ -47,19 +65,29 @@ const animateProducts = () => {
   )
 }
 
-watch(selectedCategory, async (newCategory) => {
+watch([selectedCategory, showOutlet, showNewArrivals], async ([newCategory, newOutlet, newNew]) => {
+  if (!componentMounted.value) return
+  
   isLoading.value = true
   
+  // Aplicar filtros mediante la store
   if (newCategory) {
     products.filterByCategory(newCategory)
+  } else if (newOutlet) {
+    // Mostrar solo productos outlet - crear filtro especial
+    products.applyFilter({ isOutlet: true as any })
+  } else if (newNew) {
+    // Mostrar solo nuevos - crear filtro especial
+    products.applyFilter({ isNew: true as any })
   } else {
     products.clearFilters()
   }
   
-  // Wait for DOM to update
+  // Esperar a que se actualice el DOM
+  await nextTick()
   await nextTick()
   
-  // Fade out previous cards
+  // Fade out de tarjetas anteriores
   const cards = document.querySelectorAll('.product-card')
   gsap.to(cards, {
     opacity: 0,
@@ -67,14 +95,16 @@ watch(selectedCategory, async (newCategory) => {
     duration: 0.3,
   })
   
-  // Small delay then animate new cards
+  // Pequeño delay luego animar nuevas tarjetas
   setTimeout(() => {
     animateProducts()
     isLoading.value = false
   }, 300)
-})
+}, { flush: 'post' })
 
 watch(sortBy, async (newSort) => {
+  if (!componentMounted.value) return
+  
   isLoading.value = true
   products.sortBy(newSort)
   
@@ -88,7 +118,7 @@ watch(sortBy, async (newSort) => {
     duration: 0.3,
   })
   
-  // Animate in
+  // Animar entrada
   setTimeout(() => {
     animateProducts()
     isLoading.value = false
@@ -98,10 +128,6 @@ watch(sortBy, async (newSort) => {
 const handleAddToCart = (product: any) => {
   if (product.stock <= 0) return
   cart.addToCart(product, 1, product.tallas[0])
-}
-
-const filteredProducts = () => {
-  return products.filteredProducts
 }
 </script>
 
@@ -141,7 +167,7 @@ const filteredProducts = () => {
           <div class="mb-6 flex items-center justify-between">
             <p class="font-body-md text-body-md text-on-surface-variant">
               Mostrando 
-              <span class="font-semibold text-on-surface">{{ filteredProducts().length }}</span>
+              <span class="font-semibold text-on-surface">{{ products.filteredProducts.length }}</span>
               resultados
             </p>
           </div>
@@ -153,7 +179,7 @@ const filteredProducts = () => {
             :class="{ 'opacity-50': isLoading }"
           >
             <ProductCard 
-              v-for="product in filteredProducts()"
+              v-for="product in products.filteredProducts"
               :key="product.id"
               :product="product"
               class="product-card"
@@ -162,7 +188,7 @@ const filteredProducts = () => {
           </div>
 
           <!-- Empty State -->
-          <div v-if="filteredProducts().length === 0" class="text-center py-20 empty-state-animation">
+          <div v-if="products.filteredProducts.length === 0" class="text-center py-20 empty-state-animation">
             <p class="font-body-lg text-body-lg text-on-surface-variant mb-6">
               No hay productos que coincidan con los filtros seleccionados.
             </p>

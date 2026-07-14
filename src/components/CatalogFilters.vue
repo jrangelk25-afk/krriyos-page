@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useProducts } from '../composables/useProducts'
+import { computed } from 'vue'
+
 interface Props {
   selectedCategory?: string | null
   sortBy?: string
@@ -14,18 +17,18 @@ const emit = defineEmits<{
   'update:sortBy': [value: string]
 }>()
 
-const categories = [
-  { id: 'sneakers', name: 'Sneakers' },
-  { id: 'urban', name: 'Urban' },
-  { id: 'botas', name: 'Botas' },
-]
+const products = useProducts()
 
+// Opciones de ordenamiento - estas sí son hardcodeadas porque son constantes de la app
 const sortOptions = [
   { value: 'nombre', label: 'Nombre' },
   { value: 'precio-asc', label: 'Precio: Menor a Mayor' },
   { value: 'precio-desc', label: 'Precio: Mayor a Menor' },
   { value: 'nuevo', label: 'Más Nuevos' },
 ]
+
+// Las categorías se cargan dinámicamente desde la BD
+const categories = computed(() => products.categories)
 </script>
 
 <template>

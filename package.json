@@ -4,28 +4,47 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "dev:full": "concurrently \"node server.js\" \"vite\"",
+    "build": "vue-tsc -b && vite build && pnpm prisma migrate deploy",
+    "start": "node server.js",
     "preview": "vite preview",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage"
   },
   "dependencies": {
-    "vue": "^3.5.34"
+    "@prisma/adapter-pg": "^7.8.0",
+    "@supabase/supabase-js": "^2.110.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "jsonwebtoken": "^9.0.3",
+    "jwt-decode": "^4.0.0",
+    "pg": "^8.22.0",
+    "vue": "^3.5.34",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@types/node": "^24.12.3",
-    "@vercel/node": "^3.0.13",
-    "@vitejs/plugin-vue": "^6.0.6",
+    "@prisma/client": "^7.8.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^24.13.2",
+    "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/ui": "^4.1.8",
     "@vue/tsconfig": "^0.9.1",
     "autoprefixer": "^10.5.0",
+    "concurrently": "^9.1.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
     "fast-check": "^4.8.0",
     "gsap": "^3.15.0",
     "jsdom": "^29.1.1",
+    "only-allow": "^1.2.2",
     "pinia": "^3.0.4",
     "postcss": "^8.5.15",
+    "prisma": "^7.8.0",
     "sharp": "^0.35.1",
     "tailwindcss": "^3.4.19",
     "terser": "^5.48.0",
@@ -34,5 +53,8 @@
     "vitest": "^4.1.8",
     "vue-router": "^5.1.0",
     "vue-tsc": "^3.3.4"
+  },
+  "overrides": {
+    "@hono/node-server": ">=1.19.13"
   }
 }

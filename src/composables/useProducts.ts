@@ -12,7 +12,7 @@ export const useProducts = () => {
   }
 
   const filterByCategory = (category: string) => {
-    productStore.applyFilter({ categoria: category })
+    productStore.filterByCategory(category)
     return productStore.filteredProducts
   }
 
@@ -30,9 +30,23 @@ export const useProducts = () => {
     return productStore.newArrivals
   }
 
+  const getOutletProducts = () => {
+    return productStore.outletProducts
+  }
+
+  const applyFilter = (filters: any) => {
+    productStore.applyFilter(filters)
+    return productStore.filteredProducts
+  }
+
   const clearFilters = () => {
     productStore.clearFilters()
     return productStore.allProducts
+  }
+
+  const initializeData = async () => {
+    await productStore.loadCategories()
+    await productStore.loadProducts()
   }
 
   return {
@@ -42,9 +56,31 @@ export const useProducts = () => {
     sortBy,
     search,
     getNewArrivals,
+    getOutletProducts,
     clearFilters,
-    filteredProducts: productStore.filteredProducts,
-    allProducts: productStore.allProducts,
-    categories: productStore.categories,
+    applyFilter,
+    initializeData,
+    loadCategories: productStore.loadCategories,
+    loadProducts: productStore.loadProducts,
+    loadProductById: productStore.loadProductById,
+    // Retornar referencias DIRECTAS a la store con getters
+    get filteredProducts() {
+      return productStore.filteredProducts
+    },
+    get allProducts() {
+      return productStore.allProducts
+    },
+    get categories() {
+      return productStore.categories
+    },
+    get filters() {
+      return productStore.filters
+    },
+    get isLoading() {
+      return productStore.isLoading
+    },
+    get error() {
+      return productStore.error
+    },
   }
 }

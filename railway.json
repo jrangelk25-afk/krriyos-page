@@ -1,0 +1,23 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "pnpm build"
+  },
+  "deploy": {
+    "startCommand": "pnpm start",
+    "restartPolicyMaxRetries": 5,
+    "restartPolicyWindowSeconds": 600,
+    "healthchecks": {
+      "cpu": {
+        "percentage": 80
+      },
+      "memory": {
+        "percentage": 80
+      }
+    }
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  }
+}

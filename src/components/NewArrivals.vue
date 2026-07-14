@@ -9,7 +9,12 @@ const products = useProducts()
 const gsap = useGSAP()
 const cart = useCart()
 
-onMounted(() => {
+onMounted(async () => {
+  // Cargar datos si no están cargados
+  if (products.allProducts.length === 0) {
+    await products.initializeData()
+  }
+
   gsap.staggerElements('.product-card', {
     duration: 0.6,
     stagger: 0.1,

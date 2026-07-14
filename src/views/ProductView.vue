@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
+import ProductSizeColorMatrix from '../components/ProductSizeColorMatrix.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,22 +11,31 @@ const products = useProducts()
 const cart = useCart()
 
 const product = ref(products.getById(route.params.id as string))
-const selectedTalla = ref<string>('')
-const quantity = ref(1)
 const currentImageIndex = ref(0)
 
 if (!product.value) {
   router.push('/catalogo')
 }
 
-const handleAddToCart = () => {
-  if (!selectedTalla.value) {
-    alert('Por favor selecciona una talla')
-    return
-  }
-  cart.addToCart(product.value!, quantity.value, selectedTalla.value)
-  quantity.value = 1
-  selectedTalla.value = ''
+const handleAddToCart = (details: {
+  size: string
+  colorId: string
+  colorName: string
+  quantity: number
+}) => {
+  if (!product.value) return
+
+  // Agregar al carrito con talla + color
+  cart.addToCart(
+    product.value,
+    details.quantity,
+    details.size,
+    details.colorId,
+    details.colorName
+  )
+
+  // Feedback visual
+  alert(`${details.quantity}x ${product.value.nombre} - Talla ${details.size} ${details.colorName} agregado al carrito`)
 }
 
 const goBack = () => {
@@ -43,57 +53,74 @@ const prevImage = () => {
     currentImageIndex.value = (currentImageIndex.value - 1 + product.value.imagenes.length) % product.value.imagenes.length
   }
 }
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value)
+}
 </script>
 
 <template>
-  <div v-if="product" class="min-h-[calc(100vh-80px)]">
-    <div class="px-margin-mobile md:px-margin-desktop py-12 max-w-7xl mx-auto">
+  <div v-if="product" class="min-h-[calc(100vh-80px)] bg-surface">
+    <div class="px-margin-mobile md:px-margin-desktop py-6 md:py-8 max-w-7xl mx-auto">
       <!-- Back Button -->
       <button 
         @click="goBack"
-        class="font-label-caps text-label-caps text-primary uppercase hover:opacity-70 transition-opacity mb-8"
+        class="inline-flex items-center gap-2 font-label-md text-label-md text-primary uppercase hover:opacity-70 transition-opacity mb-4"
       >
-        ← Volver al Catálogo
+        <span class="material-symbols-outlined">chevron_left</span>
+        Volver
       </button>
 
-      <!-- Product Detail -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <!-- Image Gallery -->
-        <div class="flex flex-col gap-4">
+      <!-- Main Layout: Large image LEFT | Details + Selector RIGHT -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+        
+        <!-- LEFT: LARGE IMAGE GALLERY (1/2) -->
+        <div class="flex flex-col gap-4 order-2 lg:order-1">
           <!-- Main Image -->
-          <div class="aspect-[4/5] bg-surface-product rounded-lg overflow-hidden relative">
+          <div class="aspect-[4/5] bg-surface-product rounded-xl overflow-hidden relative shadow-lg group">
             <img 
               :src="product.imagenes[currentImageIndex]"
               :alt="product.nombre"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div class="absolute inset-0 flex items-center justify-between px-4 py-4">
+            
+            <!-- Image navigation -->
+            <div v-if="product.imagenes.length > 1" class="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
-                v-if="product.imagenes.length > 1"
                 @click="prevImage"
-                class="bg-ink-black/50 text-on-primary hover:bg-ink-black/70 transition-colors p-2 rounded-full"
+                class="bg-primary/90 hover:bg-primary text-on-primary p-2 rounded-full shadow-lg transition-all active:scale-95"
               >
                 <span class="material-symbols-outlined">chevron_left</span>
               </button>
               <button 
-                v-if="product.imagenes.length > 1"
                 @click="nextImage"
-                class="bg-ink-black/50 text-on-primary hover:bg-ink-black/70 transition-colors p-2 rounded-full"
+                class="bg-primary/90 hover:bg-primary text-on-primary p-2 rounded-full shadow-lg transition-all active:scale-95"
               >
                 <span class="material-symbols-outlined">chevron_right</span>
               </button>
             </div>
+
+            <!-- Image counter -->
+            <div v-if="product.imagenes.length > 1" class="absolute bottom-3 right-3 bg-ink-black/70 text-on-primary rounded-full px-2 py-1">
+              <p class="font-label-sm text-xs">{{ currentImageIndex + 1 }}/{{ product.imagenes.length }}</p>
+            </div>
           </div>
 
-          <!-- Thumbnails -->
-          <div v-if="product.imagenes.length > 1" class="flex gap-2">
+          <!-- Thumbnails horizontal -->
+          <div v-if="product.imagenes.length > 1" class="flex gap-2 overflow-x-auto pb-1">
             <button 
               v-for="(img, index) in product.imagenes"
               :key="index"
               @click="currentImageIndex = index"
               :class="[
-                'w-20 h-24 rounded-lg overflow-hidden border-2',
-                index === currentImageIndex ? 'border-primary' : 'border-outline-variant'
+                'flex-shrink-0 w-16 h-20 rounded-lg overflow-hidden border-3 transition-all',
+                index === currentImageIndex 
+                  ? 'border-primary shadow-md' 
+                  : 'border-outline-variant hover:border-primary'
               ]"
             >
               <img 
@@ -105,108 +132,99 @@ const prevImage = () => {
           </div>
         </div>
 
-        <!-- Product Info -->
-        <div class="flex flex-col gap-6">
-          <!-- SKU and Name -->
-          <div>
-            <p class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">
-              {{ product.sku }}
-            </p>
-            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface uppercase">
-              {{ product.nombre }}
-            </h1>
-          </div>
-
-          <!-- Description -->
-          <p class="font-body-lg text-body-lg text-on-surface-variant">
-            {{ product.descripcion }}
-          </p>
-
-          <!-- Price -->
-          <div class="text-4xl font-bold text-primary">
-            ${{ product.precio.toFixed(2) }}
-          </div>
-
-          <!-- Category and Stock -->
-          <div class="flex gap-8">
-            <div>
-              <p class="font-label-caps text-label-caps text-on-surface-variant uppercase">Categoría</p>
-              <p class="font-body-md text-body-md text-on-surface">{{ product.categoria }}</p>
-            </div>
-            <div>
-              <p class="font-label-caps text-label-caps text-on-surface-variant uppercase">Stock</p>
-              <p :class="['font-body-md text-body-md', product.stock > 0 ? 'text-green-600' : 'text-error']">
-                {{ product.stock > 0 ? `${product.stock} disponibles` : 'Agotado' }}
+        <!-- RIGHT: DETAILS + SELECTOR (1/2) -->
+        <div class="flex flex-col gap-6 order-1 lg:order-2">
+          
+          <!-- PRICE & BASIC INFO -->
+          <div class="space-y-3">
+            <!-- Precio -->
+            <div class="space-y-1">
+              <p class="font-label-sm text-label-sm text-on-surface-variant line-through">
+                {{ formatCurrency(product.precio * 1.5) }}
+              </p>
+              <p class="font-headline-lg text-headline-lg text-primary">
+                {{ formatCurrency(product.precio) }}
               </p>
             </div>
+
+            <!-- Link guía tallas -->
+            <a href="#" class="inline-block text-primary font-label-sm text-label-sm uppercase hover:underline">
+              Guía de tallas →
+            </a>
           </div>
 
-          <!-- Talla Selection -->
-          <div v-if="product.stock > 0">
-            <label class="font-label-caps text-label-caps text-on-surface uppercase block mb-3">
-              Selecciona una Talla
-            </label>
-            <div class="grid grid-cols-4 gap-2">
-              <button 
-                v-for="talla in product.tallas"
-                :key="talla"
-                @click="selectedTalla = talla"
-                :class="[
-                  'p-3 border-2 rounded-lg font-label-caps text-label-caps text-center transition-colors',
-                  selectedTalla === talla 
-                    ? 'border-primary bg-primary text-on-primary' 
-                    : 'border-outline-variant text-on-surface hover:border-primary'
-                ]"
-              >
-                {{ talla }}
-              </button>
+          <!-- PRODUCT DETAILS -->
+          <div class="space-y-4 border-t border-b border-outline-variant py-4">
+            <!-- Nombre -->
+            <div>
+              <h1 class="font-headline-md text-headline-md text-on-surface">
+                {{ product.nombre }}
+              </h1>
+            </div>
+
+            <!-- SKU -->
+            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase">
+              SKU: {{ product.sku }}
+            </p>
+
+            <!-- Category -->
+            <div>
+              <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-1">Categoría</p>
+              <p class="font-body-md text-body-md text-on-surface">{{ product.categoria }}</p>
+            </div>
+
+            <!-- Description -->
+            <div v-if="product.descripcion">
+              <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-2">Descripción</p>
+              <ul class="space-y-1">
+                <li v-for="(line, idx) in product.descripcion.split('\n')" :key="idx" class="font-body-sm text-body-sm text-on-surface-variant flex items-start gap-2">
+                  <span class="text-primary mt-1">•</span>
+                  <span>{{ line }}</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Stock Status -->
+            <div v-if="product.stock > 0" class="flex items-center gap-2 text-success">
+              <span class="material-symbols-outlined text-sm">check_circle</span>
+              <span class="font-label-sm text-label-sm">En Stock</span>
+            </div>
+            <div v-else class="flex items-center gap-2 text-error">
+              <span class="material-symbols-outlined text-sm">cancel</span>
+              <span class="font-label-sm text-label-sm">Agotado</span>
             </div>
           </div>
 
-          <!-- Quantity Selection -->
-          <div v-if="product.stock > 0" class="flex items-center gap-4">
-            <label class="font-label-caps text-label-caps text-on-surface uppercase">Cantidad</label>
-            <div class="flex items-center border border-outline-variant rounded-lg">
-              <button 
-                @click="quantity = Math.max(1, quantity - 1)"
-                class="p-2 hover:bg-surface-container transition-colors"
-              >
-                <span class="material-symbols-outlined">remove</span>
-              </button>
-              <span class="w-12 text-center font-body-md">{{ quantity }}</span>
-              <button 
-                @click="quantity = Math.min(product.stock, quantity + 1)"
-                class="p-2 hover:bg-surface-container transition-colors"
-              >
-                <span class="material-symbols-outlined">add</span>
-              </button>
-            </div>
+          <!-- SIZE & COLOR SELECTOR -->
+          <div v-if="product.stock > 0" class="space-y-4">
+            <ProductSizeColorMatrix 
+              :product-id="product.id"
+              :product-name="product.nombre"
+              @add-to-cart="handleAddToCart"
+            />
           </div>
 
-          <!-- Add to Cart Button -->
-          <button 
-            v-if="product.stock > 0"
-            @click="handleAddToCart"
-            :disabled="!selectedTalla"
-            class="w-full bg-primary text-on-primary px-8 py-4 font-label-caps text-label-caps uppercase hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Agregar al Carrito
-          </button>
-          <button 
-            v-else
-            disabled
-            class="w-full bg-surface-variant text-on-surface-variant px-8 py-4 font-label-caps text-label-caps uppercase cursor-not-allowed"
-          >
-            Agotado
-          </button>
+          <div v-else class="bg-surface-bright rounded-lg p-4 border-2 border-error/20 text-center">
+            <p class="text-on-surface-variant font-body-md">
+              Producto no disponible
+            </p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Not Found -->
   <div v-else class="min-h-[calc(100vh-80px)] flex items-center justify-center">
-    <p class="font-body-lg text-body-lg text-on-surface-variant">
-      Producto no encontrado
-    </p>
+    <div class="text-center space-y-4">
+      <span class="material-symbols-outlined text-6xl text-on-surface-variant opacity-50">error</span>
+      <p class="font-body-lg text-on-surface-variant">Producto no encontrado</p>
+      <button 
+        @click="goBack"
+        class="inline-block px-6 py-2 bg-primary text-on-primary rounded-lg font-label-md uppercase hover:opacity-90"
+      >
+        Volver
+      </button>
+    </div>
   </div>
 </template>

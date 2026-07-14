@@ -1,11 +1,12 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { ApiRequest, ApiResponse } from './types'
 
 export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
+  req: ApiRequest,
+  res: ApiResponse
 ) {
-  res.status(200).json({
-    message: 'Vercel Functions está funcionando correctamente',
+  res.writeHead(200, { 'Content-Type': 'application/json' })
+  res.end(JSON.stringify({
+    message: 'API está funcionando correctamente',
     timestamp: new Date().toISOString(),
-  })
+  }))
 }

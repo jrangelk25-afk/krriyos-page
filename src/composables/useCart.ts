@@ -6,7 +6,7 @@ export const useCart = () => {
   const cartStore = useCartStore()
   const uiStore = useUIStore()
 
-  const addToCart = (product: Product, quantity: number = 1, talla: string) => {
+  const addToCart = (product: Product, quantity: number = 1, talla: string, colorId?: string, colorName?: string) => {
     if (!talla) {
       uiStore.addNotification(
         'Por favor selecciona una talla',
@@ -25,13 +25,16 @@ export const useCart = () => {
       return false
     }
 
-    const cartItemId = `${product.id}-${talla}`
+    // Crear ID único considerando producto + talla + color
+    const cartItemId = colorId ? `${product.id}-${talla}-${colorId}` : `${product.id}-${talla}`
     const cartItem: CartItem = {
       id: cartItemId,
       productId: product.id,
       producto: product,
       cantidad: quantity,
       talla,
+      colorId,
+      colorName,
       precioUnitario: product.precio,
     }
 

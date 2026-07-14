@@ -6,6 +6,14 @@ import type { Order } from '../types'
 const router = useRouter()
 const order = ref<Order | null>(null)
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value)
+}
+
 onMounted(() => {
   const orderData = sessionStorage.getItem('krriyos_order')
   if (orderData) {
@@ -100,7 +108,7 @@ const continueShopping = () => {
                 </p>
               </div>
               <p class="font-label-caps text-label-caps text-on-surface">
-                ${{ (item.cantidad * item.precioUnitario).toFixed(2) }}
+                {{ formatCurrency(item.cantidad * item.precioUnitario) }}
               </p>
             </div>
           </div>
@@ -110,15 +118,15 @@ const continueShopping = () => {
         <div class="space-y-2 mb-6 pb-6 border-b border-outline-variant">
           <div class="flex justify-between">
             <p class="font-body-md text-body-md text-on-surface-variant">Subtotal</p>
-            <p class="font-body-md text-body-md text-on-surface">${{ order.totals.subtotal.toFixed(2) }}</p>
+            <p class="font-body-md text-body-md text-on-surface">{{ formatCurrency(order.totals.subtotal) }}</p>
           </div>
           <div class="flex justify-between">
             <p class="font-body-md text-body-md text-on-surface-variant">Impuesto (19%)</p>
-            <p class="font-body-md text-body-md text-on-surface">${{ order.totals.tax.toFixed(2) }}</p>
+            <p class="font-body-md text-body-md text-on-surface">{{ formatCurrency(order.totals.tax) }}</p>
           </div>
           <div class="flex justify-between items-center bg-primary/10 p-3 rounded">
             <p class="font-headline-md text-headline-md text-on-surface">Total</p>
-            <p class="font-headline-md text-headline-md text-primary">${{ order.totals.total.toFixed(2) }}</p>
+            <p class="font-headline-md text-headline-md text-primary">{{ formatCurrency(order.totals.total) }}</p>
           </div>
         </div>
       </div>

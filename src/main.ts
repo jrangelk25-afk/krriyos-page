@@ -3,14 +3,26 @@ import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import './style.css'
 import App from './App.vue'
-import { useScrollBehavior } from './composables/useScrollBehavior'
 
 // Views
 import HomeView from './views/HomeView.vue'
 import CatalogView from './views/CatalogView.vue'
+import OutletView from './views/OutletView.vue'
+import NewArrivalsView from './views/NewArrivalsView.vue'
 import ProductView from './views/ProductView.vue'
 import CheckoutView from './views/CheckoutView.vue'
 import ConfirmationView from './views/ConfirmationView.vue'
+import AboutView from './views/AboutView.vue'
+import AdminLoginView from './views/admin/AdminLogin.vue'
+import AdminDashboard from './views/admin/AdminDashboard.vue'
+import AdminProducts from './views/admin/AdminProducts.vue'
+import AdminCategories from './views/admin/AdminCategories.vue'
+import AdminOrders from './views/admin/AdminOrders.vue'
+import AdminOrderDetail from './views/admin/AdminOrderDetail.vue'
+import AdminCustomers from './views/admin/AdminCustomers.vue'
+import AdminUsers from './views/admin/AdminUsers.vue'
+import AdminAuditLogs from './views/admin/AdminAuditLogs.vue'
+import AdminSettings from './views/admin/AdminSettings.vue'
 
 const routes = [
   {
@@ -22,6 +34,16 @@ const routes = [
     path: '/catalogo',
     name: 'Catalog',
     component: CatalogView,
+  },
+  {
+    path: '/outlet',
+    name: 'Outlet',
+    component: OutletView,
+  },
+  {
+    path: '/nuevos',
+    name: 'NewArrivals',
+    component: NewArrivalsView,
   },
   {
     path: '/producto/:id',
@@ -53,26 +75,79 @@ const routes = [
     name: 'Confirmation',
     component: ConfirmationView,
   },
+  {
+    path: '/nosotros',
+    name: 'About',
+    component: AboutView,
+  },
+  // Admin Routes
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: AdminLoginView,
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+  },
+  {
+    path: '/admin/products',
+    name: 'AdminProducts',
+    component: AdminProducts,
+  },
+  {
+    path: '/admin/products/:id/edit',
+    name: 'AdminProductEdit',
+    component: () => import('./views/admin/AdminProductEdit.vue'),
+  },
+  {
+    path: '/admin/categories',
+    name: 'AdminCategories',
+    component: AdminCategories,
+  },
+  {
+    path: '/admin/orders',
+    name: 'AdminOrders',
+    component: AdminOrders,
+  },
+  {
+    path: '/admin/orders/:id',
+    name: 'AdminOrderDetail',
+    component: AdminOrderDetail,
+  },
+  {
+    path: '/admin/customers',
+    name: 'AdminCustomers',
+    component: AdminCustomers,
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: AdminUsers,
+  },
+  {
+    path: '/admin/audit-logs',
+    name: 'AdminAuditLogs',
+    component: AdminAuditLogs,
+  },
+  {
+    path: '/admin/settings',
+    name: 'AdminSettings',
+    component: AdminSettings,
+  },
 ]
-
-// Inicializar composable de scroll
-const scrollBehaviorComposable = useScrollBehavior()
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })
 
-/**
- * Obtener la posición de scroll actual
- */
-const getCurrentScroll = () => {
-  return Math.max(
-    window.scrollY,
-    document.documentElement.scrollTop,
-    document.body.scrollTop
-  )
-}
+// Middleware de protección para rutas admin
+router.beforeEach((_to, _from) => {
+  // La validación de autenticación se hace en el componente AdminLayout
+  // Solo permitimos pasar y el componente checa en onMounted
+})
 
 /**
  * Hacer scroll a una posición específica
@@ -84,38 +159,37 @@ const setScrollPosition = (top: number) => {
 }
 
 /**
- * FLUJO CORRECTO:
- * 1. Restaurar posición de la NUEVA ruta (si existe)
- * 2. Guardar posición de la ANTERIOR ruta
- * 3. Confirmar en afterEach
- */
-
-/**
  * beforeResolve - Se ejecuta ANTES de cambiar la ruta
- * Orden CORRECTO:
- *   1. PRIMERO: Guardar scroll de la ruta ANTERIOR (ANTES de cambiar)
- *   2. LUEGO: Restaurar scroll de la ruta NUEVA
+ * Siempre va al inicio de la página
  */
-router.beforeResolve((to, from) => {
-  const currentScroll = getCurrentScroll()
-  
-  // PASO 1: PRIMERO guardar la posición de la ruta ANTERIOR (antes de que cambie todo)
-  if (from.path && currentScroll > 0) {
-    scrollBehaviorComposable.saveScrollPosition(from.path)
-  }
-  
-  // PASO 2: LUEGO restaurar la posición de la NUEVA ruta
-  const savedPositionNewRoute = scrollBehaviorComposable.getScrollPosition(to.path)
-  
-  if (savedPositionNewRoute) {
-    setScrollPosition(savedPositionNewRoute.top)
-  } else {
-    setScrollPosition(0)
-  }
+router.beforeResolve(() => {
+  // Siempre ir al inicio de la página cuando se cambia de ruta
+  setScrollPosition(0)
 })
 
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-app.mount('#app')
+
+// Inicializar datos del store cuando se monta la app
+import { useProductStore } from './stores/productStore'
+
+const initializeApp = async () => {
+  const productStore = useProductStore()
+  
+  // Cargar datos si no están ya cargados
+  if (productStore.allProducts.length === 0) {
+    try {
+      await productStore.loadCategories()
+      await productStore.loadProducts()
+    } catch (error) {
+      console.error('Error initializing app data:', error)
+    }
+  }
+}
+
+// Ejecutar inicialización antes de montar
+initializeApp().then(() => {
+  app.mount('#app')
+})

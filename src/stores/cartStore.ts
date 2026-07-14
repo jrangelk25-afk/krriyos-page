@@ -49,8 +49,11 @@ export const useCartStore = defineStore('cart', () => {
 
   // Actions
   const addToCart = (item: CartItem) => {
+    // Buscar por producto, talla Y color para crear IDs únicos
     const existingItem = items.value.find(
-      (i) => i.productId === item.productId && i.talla === item.talla
+      (i) => i.productId === item.productId && 
+             i.talla === item.talla && 
+             i.colorId === item.colorId
     )
 
     if (existingItem) {

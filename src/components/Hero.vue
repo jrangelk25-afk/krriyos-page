@@ -75,14 +75,14 @@ const goToCatalog = () => {
         </h1>
         
         <p class="hero-description font-body-lg text-body-lg text-on-primary/90 mb-8 md:mb-12 max-w-xl">
-          Descubre nuestra colección de sneakers premium, urban wear y botas de alto rendimiento, diseñadas con precisión arquitectónica para el movimiento contemporáneo.
+          Descubre nuestra colección de mocasines, sneakers, apache, botas, entre otras; diseñadas con precisión arquitectónica para el movimiento contemporáneo.
         </p>
 
         <button 
           @click="goToCatalog"
           class="hero-button bg-ink-black text-on-primary px-8 md:px-12 py-4 md:py-5 font-label-caps text-label-caps uppercase hover:bg-on-primary hover:text-ink-black transition-all duration-300 border-2 border-ink-black"
         >
-          Comprar Ahora
+          Ver Ahora
         </button>
       </div>
     </div>

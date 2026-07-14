@@ -12,6 +12,14 @@ const cartStore = useCartStore()
 const uiStore = useUIStore()
 const isLoading = ref(false)
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value)
+}
+
 const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
   isLoading.value = true
   uiStore.setLoading(true)
@@ -88,21 +96,29 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
               <div 
                 v-for="item in cartStore.items"
                 :key="item.id"
-                class="flex justify-between items-start gap-3"
+                class="flex justify-between items-start gap-3 p-3 bg-surface rounded-lg"
               >
-                <div class="flex-1">
-                  <p class="font-label-caps text-label-caps text-sm text-on-surface">
+                <div class="flex-1 space-y-2">
+                  <p class="font-label-caps text-label-caps text-xs text-on-surface-variant">
                     {{ item.producto.sku }}
                   </p>
-                  <p class="font-body-md text-body-md text-on-surface-variant">
-                    Talla: {{ item.talla }}
+                  <p class="font-body-md text-body-md text-on-surface">
+                    {{ item.producto.nombre }}
                   </p>
-                  <p class="font-body-md text-body-md text-on-surface-variant">
-                    × {{ item.cantidad }}
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="inline-block bg-surface-dim rounded px-2 py-1">
+                      <p class="font-label-sm text-label-sm text-on-surface">Talla {{ item.talla }}</p>
+                    </span>
+                    <span v-if="item.colorName" class="inline-block bg-surface-dim rounded px-2 py-1">
+                      <p class="font-label-sm text-label-sm text-on-surface">{{ item.colorName }}</p>
+                    </span>
+                  </div>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant">
+                    Cantidad: {{ item.cantidad }}
                   </p>
                 </div>
-                <p class="font-label-caps text-label-caps text-on-surface whitespace-nowrap">
-                  ${{ (item.cantidad * item.precioUnitario).toFixed(2) }}
+                <p class="font-label-caps text-label-caps text-on-surface whitespace-nowrap font-bold">
+                  {{ formatCurrency(item.cantidad * item.precioUnitario) }}
                 </p>
               </div>
             </div>

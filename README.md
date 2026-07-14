@@ -437,28 +437,31 @@ npm run build    # Ve mensajes de error
 
 ## 🚀 Deployment
 
-### Vercel (Recomendado para Vue+Vite)
+
+### Railway.app Deployment
 
 ```bash
-# 1. Push código a GitHub
+# 1. Instalar Railway CLI
+npm install -g @railway/cli
+
+# 2. Login en Railway
+railway login
+
+# 3. Crear proyecto en Railway
+railway init
+
+# 4. Configurar variables de entorno
+railway link
+railway variables
+
+# 5. Conectar base de datos PostgreSQL en Railway dashboard
+
+# 6. Deploy
 git push origin main
+# Railway detecta los cambios automáticamente
 
-# 2. Conectar en vercel.com
-# Vercel detecta automáticamente Vue+Vite
-# Build command: npm run build
-# Output directory: dist
-
-# 3. Deploy automático en cada push
-```
-
-### Netlify
-
-```bash
-# 1. Instalar CLI
-npm install -g netlify-cli
-
-# 2. Deploy
-netlify deploy --prod --dir dist
+# 7. Ver logs
+railway logs
 ```
 
 ### Hosting Estático General

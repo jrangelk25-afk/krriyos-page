@@ -1,0 +1,52 @@
+# Railway ignore file
+# Archivos y carpetas que no necesita Railway
+
+# Control de versiones
+.git
+.gitignore
+.github
+
+# Herramientas de desarrollo
+node_modules
+.pnpm-store
+*.local
+
+# IDEs
+.vscode
+.idea
+.DS_Store
+*.sw?
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Documentación
+docs/
+*.md
+
+# Archivos de prueba
+vitest.config.ts
+.vitest
+
+# Cache
+.eslintcache
+.prettierignore
+
+# Configuración local
+.env.local
+.env.*.local
+
+# Build artifacts (excepto dist que es necesario)
+dist-ssr
+*.tsbuildinfo
+
+# Archivos temporales
+migration.log
+test-size-update.mjs
+
+# Especifico de Vercel/Netlify
+.vercel
+.netlify
+_redirects
+vercel.json

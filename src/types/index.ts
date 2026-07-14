@@ -1,3 +1,13 @@
+// Size Inventory types
+export interface ProductSizeInventory {
+  id: string
+  size: string
+  colorId?: string
+  colorName?: string
+  colorIds?: string[]
+  quantity: number
+}
+
 // Product types
 export interface Product {
   id: string
@@ -6,10 +16,13 @@ export interface Product {
   descripcion: string
   precio: number
   imagenes: string[]
-  categoria: 'Sneakers' | 'Urban' | 'Botas'
+  categoria: string
+  categoryId?: string
   tallas: string[]
+  sizes?: ProductSizeInventory[]
   stock: number
   isNewArrival?: boolean
+  isOutlet?: boolean
   createdAt?: Date
 }
 
@@ -20,6 +33,8 @@ export interface CartItem {
   producto: Product
   cantidad: number
   talla: string
+  colorId?: string
+  colorName?: string
   precioUnitario: number
 }
 
@@ -55,7 +70,7 @@ export interface Order {
 
 // Filters and UI types
 export interface ProductFilters {
-  categoria?: string
+  categoryId?: string
   sortBy?: 'nombre' | 'precio-asc' | 'precio-desc' | 'nuevo'
   searchQuery?: string
 }

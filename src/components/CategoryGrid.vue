@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
+import { useProducts } from '../composables/useProducts'
 import categoryL from '/category-l.webp?url'
 import categoryR from '/category-r.webp?url'
 
 const router = useRouter()
+const products = useProducts()
 const leftShoeRef = ref<HTMLDivElement | null>(null)
 const centerContentRef = ref<HTMLDivElement | null>(null)
 const rightShoeRef = ref<HTMLDivElement | null>(null)
@@ -12,27 +14,6 @@ const rightShoeRef = ref<HTMLDivElement | null>(null)
 const isLeftShoeVisible = ref(false)
 const isCenterVisible = ref(false)
 const isRightShoeVisible = ref(false)
-
-const categories = [
-  {
-    id: 'sneakers',
-    name: 'SNEAKERS',
-    description: 'La ingeniería del movimiento',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBADvoF_123k6ucLHyofdUrLXhCS6X6KySpiXRJ7nUYVgUpRHa0jFgrjnGt9WuaiGeglXlzJqAmLhc7edyc2ssQ0OL_QU5rqEtm5Uo_-pBj1jfDATOlXClqGqTcYyk2x76-EENH-uvlQig1UitJkYv7OFrwNWFNlFea0kh7U1QoHuwiCDT8gw0VR0m-_OOQX8bEGhfAON0dyF7ue7tL4Si-1hO5hDwkRG6EXS7amthFROlZQDhVOvVOx2cmV3Bfkc0IAGPxgX9YdsRG'
-  },
-  {
-    id: 'urban',
-    name: 'URBAN',
-    description: 'Versatilidad sin compromiso',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCpH-kIvqVGBiMyqrPhgFYgte-Ihw4uJDNdxaW9I6cHNz76AFIyRUv4MJlXn98PTUj-fVTUrFYg9xOALgHizydTg_KJ13Qlqv_nQ95i2KVWWd9CJUjyTpQMGEhsq-SUq1EOUBR03woIvD4iIwm0qgOPAr2zQk5AkDORXyHfliLB6wuIJHZVWolvXSjUf3EJAHoPtrYFMhyj9yQHkfOF20AyCnHeSxIewa8ENjYH6dtvI8t2yl5K0nxzKfCv-i9GXX50oRJeK_W1E30D'
-  },
-  {
-    id: 'botas',
-    name: 'BOTAS',
-    description: 'Aventura extrema',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8ZXuke-5GLKlgj3uifVBb-Y0nXRA8U4C6WgIJQoQMfeQRhjsydEyDNKVlE6IueLAiBHWmno5QFe-wpSoxs7liPKnnIJP1D6s2aR4nLivUtuacUDPg00dKwKTe8Ujd5MUIgXhn5XdXuAfg5VOazug3fOE5kaoxM3wyAR3L68hDo_k7QkrOsAJzhKJq10T53ORch7MknFhZryma5cl1HztRpJu_Z9y9A7y56JW3lwBRn3KYee_d8eecbZzEbXkHWVJfNYWdwpXHyIi0'
-  }
-]
 
 const goToCategoryPage = (categoryId: string) => {
   router.push(`/catalogo?categoria=${categoryId}`)
@@ -42,7 +23,20 @@ const goToCatalog = () => {
   router.push('/catalogo')
 }
 
-onMounted(() => {
+// Obtener la primera imagen de un producto de la categoría para usar como placeholder
+const getImageForCategory = (categoryId: string) => {
+  const category = products.categories.find((c: any) => c.id === categoryId)
+  if (!category) return categoryL
+
+  // Buscar un producto en esta categoría que tenga imagen
+  const product = products.allProducts.find((p: any) => p.categoryId === categoryId && p.imagenes?.length > 0)
+  return product?.imagenes[0] || categoryL
+}
+
+onMounted(async () => {
+  // Cargar categorías desde la BD
+  await products.initializeData()
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -72,7 +66,7 @@ onMounted(() => {
 <template>
   <section class="w-full">
     <!-- Banner Superior - Minimalista con bordes de color -->
-    <div class="bg-surface-product py-12 md:py-20 lg:py-28 px-4 md:px-8">
+    <div class="bg-surface-product py-8 md:py-12 lg:py-16 px-4 md:px-8">
       <div class="max-w-7xl mx-auto">
         <!-- Grid con zapatos a los lados y texto al centro -->
         <div class="flex flex-col lg:flex-row items-center justify-center gap-6 md:gap-10 lg:gap-16">
@@ -130,78 +124,81 @@ onMounted(() => {
     </div>
 
     <!-- Grid de Categorías -->
-    <div class="py-6 md:py-10 lg:py-14 px-4 md:px-8">
+    <div class="py-8 md:py-6 px-2 md:px-4">
       <div class="max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-3 items-start">
-          <!-- Categoría Izquierda Grande -->
+        <!-- Grid principal: 1 grande a la izquierda, 2 apiladas a la derecha -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 md:grid-rows-2">
+          <!-- Categoría Grande Izquierda (ocupa 2 filas) -->
           <div 
-            @click="() => goToCategoryPage('sneakers')"
-            class="lg:col-span-5 relative group cursor-pointer"
+            v-if="products.categories.length > 0"
+            @click="() => goToCategoryPage(products.categories[0].id)"
+            class="md:row-span-2 relative group cursor-pointer h-[30rem]"
           >
-            <div class="aspect-square md:aspect-[4/5] bg-surface-product overflow-hidden rounded-lg">
+            <div class="w-full h-full bg-surface-product overflow-hidden rounded-lg">
               <img 
-                :src="categories[0].image"
-                :alt="categories[0].name"
+                :src="getImageForCategory(products.categories[0].id)"
+                :alt="products.categories[0].name"
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
             </div>
-            <div class="mt-2 md:mt-3">
-              <h3 class="font-headline-sm md:font-headline-md text-headline-sm md:text-headline-md uppercase text-sm md:text-base tracking-wider">{{ categories[0].name }}</h3>
-              <p class="font-label-caps text-label-caps text-on-surface-variant uppercase mt-0.5 md:mt-1 text-xs md:text-sm">{{ categories[0].description }}</p>
-              <button class="mt-2 md:mt-2 border-2 border-ink-black text-ink-black px-3 md:px-4 py-1 md:py-1.5 font-label-caps text-label-caps uppercase text-xs md:text-sm hover:bg-ink-black hover:text-on-primary transition-all duration-300 tracking-wider">
-                Buy Now
-              </button>
+            <div class="absolute inset-0 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-t from-ink-black/80 via-ink-black/30 to-transparent rounded-lg">
+              <div></div>
+              <div class="text-on-primary w-full">
+                <h3 class="font-display-sm md:font-display-md text-display-sm md:text-display-md uppercase mb-2 md:mb-3 tracking-widest font-bold">{{ products.categories[0].name }}</h3>
+                <p class="font-label-md text-label-md uppercase mb-3 md:mb-4 text-xs md:text-sm tracking-wider">{{ products.categories[0].description }}</p>
+                <button class="border-2 border-on-primary text-on-primary px-4 md:px-5 py-2 md:py-2.5 font-label-caps text-label-caps uppercase text-xs md:text-xs hover:bg-on-primary hover:text-ink-black transition-all duration-300 tracking-widest">
+                  Buy Now
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Spacer -->
-          <div class="hidden lg:block lg:col-span-1"></div>
-
-          <!-- Categorías Derecha -->
-          <div class="lg:col-span-6 flex flex-col gap-2 md:gap-3">
-            <!-- Urban -->
-            <div 
-              @click="() => goToCategoryPage('urban')"
-              class="relative group cursor-pointer"
-            >
-              <div class="aspect-video md:aspect-[3/2] bg-surface-product overflow-hidden rounded-lg">
-                <img 
-                  :src="categories[1].image"
-                  :alt="categories[1].name"
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-              <div class="absolute inset-0 flex items-end p-2 md:p-3 bg-gradient-to-t from-ink-black/70 via-ink-black/30 to-transparent">
-                <div class="text-on-primary">
-                  <p class="font-label-caps text-label-caps uppercase mb-0.5 text-xs md:text-sm">{{ categories[1].description }}</p>
-                  <h3 class="font-headline-sm md:font-headline-md text-headline-sm md:text-headline-md uppercase mb-1 md:mb-2 text-sm md:text-base tracking-wider">{{ categories[1].name }}</h3>
-                  <button class="border-2 border-on-primary text-on-primary px-2 md:px-3 py-0.5 md:py-1 font-label-caps text-label-caps uppercase text-xs md:text-sm hover:bg-on-primary hover:text-ink-black transition-all duration-300 tracking-wider">
-                    Buy Now
-                  </button>
-                </div>
+          <!-- Categoría 2 (arriba derecha) -->
+          <div 
+            v-if="products.categories.length > 1"
+            @click="() => goToCategoryPage(products.categories[1].id)"
+            class="relative group cursor-pointer h-56"
+          >
+            <div class="w-full h-full bg-surface-product overflow-hidden rounded-lg">
+              <img 
+                :src="getImageForCategory(products.categories[1].id)"
+                :alt="products.categories[1].name"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div class="absolute inset-0 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-t from-ink-black/80 via-ink-black/30 to-transparent rounded-lg">
+              <div></div>
+              <div class="text-on-primary w-full">
+                <h3 class="font-display-sm md:font-display-md text-display-sm md:text-display-md uppercase mb-2 md:mb-3 tracking-widest font-bold">{{ products.categories[1].name }}</h3>
+                <p class="font-label-md text-label-md uppercase mb-3 md:mb-4 text-xs md:text-sm tracking-wider">{{ products.categories[1].description }}</p>
+                <button class="border-2 border-on-primary text-on-primary px-4 md:px-5 py-2 md:py-2.5 font-label-caps text-label-caps uppercase text-xs md:text-xs hover:bg-on-primary hover:text-ink-black transition-all duration-300 tracking-widest">
+                  Buy Now
+                </button>
               </div>
             </div>
+          </div>
 
-            <!-- Botas -->
-            <div 
-              @click="() => goToCategoryPage('botas')"
-              class="relative group cursor-pointer"
-            >
-              <div class="aspect-video md:aspect-[3/2] bg-surface-product overflow-hidden rounded-lg">
-                <img 
-                  :src="categories[2].image"
-                  :alt="categories[2].name"
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-              <div class="absolute inset-0 flex items-end p-2 md:p-3 bg-gradient-to-t from-ink-black/70 via-ink-black/30 to-transparent">
-                <div class="text-on-primary">
-                  <p class="font-label-caps text-label-caps uppercase mb-0.5 text-xs md:text-sm">{{ categories[2].description }}</p>
-                  <h3 class="font-headline-sm md:font-headline-md text-headline-sm md:text-headline-md uppercase mb-1 md:mb-2 text-sm md:text-base tracking-wider">{{ categories[2].name }}</h3>
-                  <button class="border-2 border-on-primary text-on-primary px-2 md:px-3 py-0.5 md:py-1 font-label-caps text-label-caps uppercase text-xs md:text-sm hover:bg-on-primary hover:text-ink-black transition-all duration-300 tracking-wider">
-                    Buy Now
-                  </button>
-                </div>
+          <!-- Categoría 3 (abajo derecha) -->
+          <div 
+            v-if="products.categories.length > 2"
+            @click="() => goToCategoryPage(products.categories[2].id)"
+            class="relative group cursor-pointer h-56"
+          >
+            <div class="w-full h-full bg-surface-product overflow-hidden rounded-lg">
+              <img 
+                :src="getImageForCategory(products.categories[2].id)"
+                :alt="products.categories[2].name"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div class="absolute inset-0 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-t from-ink-black/80 via-ink-black/30 to-transparent rounded-lg">
+              <div></div>
+              <div class="text-on-primary w-full">
+                <h3 class="font-display-sm md:font-display-md text-display-sm md:text-display-md uppercase mb-2 md:mb-3 tracking-widest font-bold">{{ products.categories[2].name }}</h3>
+                <p class="font-label-md text-label-md uppercase mb-3 md:mb-4 text-xs md:text-sm tracking-wider">{{ products.categories[2].description }}</p>
+                <button class="border-2 border-on-primary text-on-primary px-4 md:px-5 py-2 md:py-2.5 font-label-caps text-label-caps uppercase text-xs md:text-xs hover:bg-on-primary hover:text-ink-black transition-all duration-300 tracking-widest">
+                  Buy Now
+                </button>
               </div>
             </div>
           </div>
