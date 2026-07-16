@@ -15,7 +15,7 @@
 3. **Bajar a "Gestión de Tallas e Inventario"**
 4. **Hacer clic en "Agregar Talla"**
 5. **Seleccionar:**
-   - Talla (XS, S, M, L, XL, XXL, XXXL)
+   - Talla (33-43)
    - Color (opcional)
    - Cantidad en stock
 6. **Hacer clic en "Guardar Cambios"**
