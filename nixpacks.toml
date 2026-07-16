@@ -1,5 +1,2 @@
 [phases.setup]
-nixpkgs = ["nodejs_20"]
-
-[[phases.setup.packages]]
-apt = ["nodejs=20.19.0-1nodesource1"]
+nixpkgs = ["nodejs_25"]
