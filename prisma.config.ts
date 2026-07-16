@@ -1,11 +1,12 @@
 import 'dotenv/config'
-import { defineConfig, env } from 'prisma/config'
+import { defineConfig } from 'prisma'
 
 export default defineConfig({
   schema: './prisma/schema.prisma',
-  datasource: {
-    // Para migraciones, usa DIRECT_URL (conexión directa, sin pooler)
-    // Para runtime, Prisma usa DATABASE_URL del schema
-    url: env('DIRECT_URL') || env('DATABASE_URL'),
+  seed: './prisma/seed.ts',
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL || process.env.DIRECT_URL,
+    },
   },
 })

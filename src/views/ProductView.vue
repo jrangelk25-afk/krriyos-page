@@ -79,9 +79,9 @@ const formatCurrency = (value: number) => {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
         
         <!-- LEFT: LARGE IMAGE GALLERY (1/2) -->
-        <div class="flex flex-col gap-4 order-2 lg:order-1">
+        <div class="flex flex-col gap-3 order-2 lg:order-1">
           <!-- Main Image -->
-          <div class="aspect-[4/5] bg-surface-product rounded-xl overflow-hidden relative shadow-lg group">
+          <div class="aspect-[1/1.2] bg-surface-product rounded-xl overflow-hidden relative shadow-lg group">
             <img 
               :src="product.imagenes[currentImageIndex]"
               :alt="product.nombre"
@@ -117,7 +117,7 @@ const formatCurrency = (value: number) => {
               :key="index"
               @click="currentImageIndex = index"
               :class="[
-                'flex-shrink-0 w-16 h-20 rounded-lg overflow-hidden border-3 transition-all',
+                'flex-shrink-0 w-14 h-16 rounded-lg overflow-hidden border-2 transition-all',
                 index === currentImageIndex 
                   ? 'border-primary shadow-md' 
                   : 'border-outline-variant hover:border-primary'
@@ -133,52 +133,49 @@ const formatCurrency = (value: number) => {
         </div>
 
         <!-- RIGHT: DETAILS + SELECTOR (1/2) -->
-        <div class="flex flex-col gap-6 order-1 lg:order-2">
+        <div class="flex flex-col gap-4 order-1 lg:order-2">
           
           <!-- PRICE & BASIC INFO -->
-          <div class="space-y-3">
+          <div class="space-y-2">
             <!-- Precio -->
             <div class="space-y-1">
-              <p class="font-label-sm text-label-sm text-on-surface-variant line-through">
-                {{ formatCurrency(product.precio * 1.5) }}
-              </p>
-              <p class="font-headline-lg text-headline-lg text-primary">
+              <p class="font-headline-md text-headline-md text-primary">
                 {{ formatCurrency(product.precio) }}
               </p>
             </div>
 
             <!-- Link guía tallas -->
-            <a href="#" class="inline-block text-primary font-label-sm text-label-sm uppercase hover:underline">
+            <a href="#" class="inline-block text-primary font-label-xs text-xs uppercase hover:underline">
               Guía de tallas →
             </a>
           </div>
 
           <!-- PRODUCT DETAILS -->
-          <div class="space-y-4 border-t border-b border-outline-variant py-4">
+          <div class="space-y-2 border-t border-b border-outline-variant py-3">
             <!-- Nombre -->
             <div>
-              <h1 class="font-headline-md text-headline-md text-on-surface">
+              <h1 class="font-headline-sm text-headline-sm text-on-surface">
                 {{ product.nombre }}
               </h1>
             </div>
 
             <!-- SKU -->
-            <p class="font-label-sm text-label-sm text-on-surface-variant uppercase">
+            <p class="font-label-xs text-xs text-on-surface-variant uppercase">
               SKU: {{ product.sku }}
             </p>
 
             <!-- Category -->
             <div>
-              <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-1">Categoría</p>
-              <p class="font-body-md text-body-md text-on-surface">{{ product.categoria }}</p>
+              <p class="font-label-xs text-xs text-on-surface-variant uppercase mb-1">Categoría</p>
+              <p class="font-body-sm text-sm text-on-surface">{{ product.categoria }}</p>
             </div>
 
             <!-- Description -->
             <div v-if="product.descripcion">
-              <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-2">Descripción</p>
-              <ul class="space-y-1">
-                <li v-for="(line, idx) in product.descripcion.split('\n')" :key="idx" class="font-body-sm text-body-sm text-on-surface-variant flex items-start gap-2">
-                  <span class="text-primary mt-1">•</span>
+              <p class="font-label-xs text-xs text-on-surface-variant uppercase mb-1">Descripción</p>
+              <ul class="space-y-0.5">
+                <li v-for="(line, idx) in product.descripcion.split('\n')" :key="idx" class="font-body-xs text-xs text-on-surface-variant flex items-start gap-2">
+                  <span class="text-primary mt-0.5">•</span>
                   <span>{{ line }}</span>
                 </li>
               </ul>
@@ -187,16 +184,16 @@ const formatCurrency = (value: number) => {
             <!-- Stock Status -->
             <div v-if="product.stock > 0" class="flex items-center gap-2 text-success">
               <span class="material-symbols-outlined text-sm">check_circle</span>
-              <span class="font-label-sm text-label-sm">En Stock</span>
+              <span class="font-label-xs text-xs">En Stock</span>
             </div>
             <div v-else class="flex items-center gap-2 text-error">
               <span class="material-symbols-outlined text-sm">cancel</span>
-              <span class="font-label-sm text-label-sm">Agotado</span>
+              <span class="font-label-xs text-xs">Agotado</span>
             </div>
           </div>
 
           <!-- SIZE & COLOR SELECTOR -->
-          <div v-if="product.stock > 0" class="space-y-4">
+          <div v-if="product.stock > 0" class="space-y-3">
             <ProductSizeColorMatrix 
               :product-id="product.id"
               :product-name="product.nombre"

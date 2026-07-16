@@ -1,22 +1,27 @@
 import pkg from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import pg from 'pg'
+import { Pool } from 'pg'
 
 const { PrismaClient } = pkg
-const { Pool } = pg
 
-const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL
+let prisma: InstanceType<typeof PrismaClient> | null = null
 
-let prisma: InstanceType<typeof PrismaClient>
+export const getPrisma = () => {
+  if (prisma) return prisma
 
-if (process.env.NODE_ENV === 'production') {
-  // Production: reuse connection pool
-  const pool = new Pool({ connectionString, max: 20 })
+  const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL
+  
+  if (!connectionString) {
+    throw new Error('DATABASE_URL or DIRECT_URL environment variable must be set')
+  }
+
+  // Usar adaptador pg con pool
+  const pool = new Pool({ connectionString })
   const adapter = new PrismaPg(pool)
+  
   prisma = new PrismaClient({ adapter })
-} else {
-  // Development: create new instance
-  prisma = new PrismaClient()
+
+  return prisma
 }
 
-export default prisma
+export default { getPrisma }

@@ -40,6 +40,11 @@ const goCategory = (categoryId: string) => {
   showCategoriesDropdown.value = false
 }
 
+const goAllCategories = () => {
+  router.push('/catalogo')
+  showCategoriesDropdown.value = false
+}
+
 const goAbout = () => {
   router.push('/nosotros')
   showCategoriesDropdown.value = false
@@ -109,6 +114,12 @@ const handleMobileNavigation = (callback: () => void) => {
             class="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-outline-variant overflow-hidden z-50"
           >
             <div class="py-2">
+              <button
+                @click="goAllCategories"
+                class="w-full text-left px-6 py-3 text-primary hover:bg-surface-container hover:text-primary font-bold transition-colors duration-200 text-label-caps uppercase font-label-caps border-b border-outline-variant"
+              >
+                ✓ Todas las categorías
+              </button>
               <button
                 v-for="category in categories"
                 :key="category.id"
@@ -207,6 +218,12 @@ const handleMobileNavigation = (callback: () => void) => {
             v-if="showCategoriesDropdown"
             class="pl-4 py-2 bg-surface-container rounded-lg mt-1"
           >
+            <button
+              @click="handleMobileNavigation(() => goAllCategories())"
+              class="w-full text-left px-4 py-2 text-primary font-bold hover:bg-surface-variant hover:text-primary transition-colors duration-200 text-label-caps uppercase font-label-caps rounded border-b border-outline-variant mb-2"
+            >
+              ✓ Todas las categorías
+            </button>
             <button
               v-for="category in categories"
               :key="category.id"

@@ -1,12 +1,48 @@
+import dotenv from 'dotenv'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
 import express from 'express'
 import cors from 'cors'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
-import prisma from './lib/prisma.ts'
 
-dotenv.config()
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const envPath = join(__dirname, '.env')
+
+console.log('Loading env from:', envPath)
+dotenv.config({ path: envPath })
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? '✓ loaded' : '✗ not loaded')
+
+let cachedPrisma = null
+
+const getPrismaInstance = () => {
+  if (!cachedPrisma) {
+    throw new Error('Prisma not initialized yet')
+  }
+  return cachedPrisma
+}
+
+// Inicializar Prisma de forma asíncrona
+;(async () => {
+  const { getPrisma } = await import('./lib/prisma.ts')
+  cachedPrisma = getPrisma()
+  console.log('✅ Prisma initialized successfully')
+})().catch(err => {
+  console.error('❌ Failed to initialize Prisma:', err)
+  process.exit(1)
+})
+
+// Usar un proxy para acceso transparent a prisma
+const prisma = new Proxy({}, {
+  get(target, prop) {
+    if (!cachedPrisma) {
+      throw new Error('Prisma not yet initialized')
+    }
+    return cachedPrisma[prop]
+  }
+})
 
 const app = express()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
