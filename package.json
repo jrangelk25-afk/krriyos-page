@@ -8,7 +8,7 @@
     "preinstall": "npx only-allow pnpm",
     "dev": "vite",
     "dev:full": "concurrently \"tsx server.js\" \"vite\"",
-    "build": "vue-tsc -b && vite build && pnpm prisma migrate deploy",
+    "build": "pnpm prisma generate && vue-tsc -b && vite build && pnpm prisma migrate deploy",
     "start": "tsx server.js",
     "preview": "vite preview",
     "test": "vitest --run",
