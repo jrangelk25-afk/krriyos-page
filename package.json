@@ -9,7 +9,7 @@
     "dev": "vite",
     "dev:full": "concurrently \"tsx server.js\" \"vite\"",
     "build": "pnpm prisma generate && vue-tsc -b && vite build",
-    "start": "pnpm prisma migrate deploy && tsx server.js",
+    "start": "sh -c 'if [ -n \"$DATABASE_URL\" ]; then pnpm prisma migrate deploy; fi' && tsx server.js",
     "preview": "vite preview",
     "test": "vitest --run",
     "test:watch": "vitest",
