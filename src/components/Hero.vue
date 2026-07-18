@@ -57,19 +57,20 @@ const goToCatalog = () => {
 <template>
   <section class="hero-section relative h-[70vh] md:h-[90vh] w-full overflow-hidden flex items-center">
     <!-- Background Image Carousel -->
-    <div class="hero-image absolute inset-0 z-0" :style="{ opacity: imageOpacity }">
+    <div class="hero-image absolute inset-0 z-0 flex items-center justify-center" :style="{ opacity: imageOpacity }">
       <img 
         :alt="`Hero background ${currentImageIndex + 1}`"
         :key="currentImageIndex"
         class="w-full h-full object-cover grayscale-[0.2]"
+        style="object-position: center 60%"
         :src="heroImages[currentImageIndex]"
       />
       <div class="absolute inset-0 bg-ink-black/20"></div>
     </div>
 
     <!-- Content -->
-    <div class="relative z-10 px-margin-mobile md:px-margin-desktop w-full max-w-7xl mx-auto">
-      <div class="max-w-3xl">
+    <div class="relative z-10 px-margin-mobile md:px-margin-desktop w-full flex justify-end">
+      <div class="max-w-3xl text-right pr-0">
         <h1 class="hero-headline font-display-xl text-headline-lg-mobile md:text-display-xl text-on-primary uppercase mb-6 md:mb-8">
           ORGULLOSOS<br/>DE CAMINAR CONTIGO
         </h1>
