@@ -1,7 +1,8 @@
 {
   "build": {
     "builder": "railpack",
-    "buildCommand": "pnpm build"
+    "buildCommand": "pnpm build",
+    "installCommand": "pnpm install"
   },
   "deploy": {
     "startCommand": "pnpm start",
