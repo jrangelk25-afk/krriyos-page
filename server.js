@@ -1819,6 +1819,14 @@ app.get('/api/admin/customers', async (req, res) => {
 })
 
 // ==================== ERROR HANDLING ====================
+// Servir archivos estáticos del frontend
+app.use(express.static(join(__dirname, 'dist')))
+
+// Ruta fallback para SPA - servir index.html para todas las rutas no-API
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'index.html'))
+})
+
 app.use((err, req, res, next) => {
   console.error('Server error:', err)
   res.status(500).json({ error: 'Internal server error' })
