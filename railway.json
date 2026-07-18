@@ -21,7 +21,7 @@
     "NODE_ENV": "production",
     "PORT": "3000",
     "NODE_VERSION": "25",
-    "NIXPACKS_PKGS": "pnpm"
+    "PNPM_VERSION": "latest"
   }
 }
 
