@@ -42,7 +42,6 @@ export interface CartState {
   items: CartItem[]
   totals: {
     subtotal: number
-    tax: number
     total: number
   }
   isOpen: boolean
@@ -62,6 +61,7 @@ export interface CheckoutFormData {
 // Order types
 export interface Order {
   id: string
+  orderNumber?: string
   fecha: Date
   cliente: CheckoutFormData
   items: CartItem[]

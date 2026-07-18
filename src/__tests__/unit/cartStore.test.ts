@@ -79,8 +79,7 @@ describe('cartStore (Pinia)', () => {
       }
       store.addToCart(item)
       expect(store.totals.subtotal).toBe(200)
-      expect(store.totals.tax).toBe(38) // 200 * 0.19
-      expect(store.totals.total).toBe(238)
+      expect(store.totals.total).toBe(200)
     })
   })
 
@@ -147,7 +146,7 @@ describe('cartStore (Pinia)', () => {
       store.addToCart(item)
       store.updateQuantity('item-1', 3)
       expect(store.totals.subtotal).toBe(300)
-      expect(store.totals.total).toBe(357) // 300 + (300 * 0.19)
+      expect(store.totals.total).toBe(300)
     })
   })
 

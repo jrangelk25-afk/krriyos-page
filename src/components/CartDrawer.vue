@@ -43,6 +43,14 @@ const handleCheckout = () => {
   closeDrawer()
   router.push('/checkout')
 }
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value)
+}
 </script>
 
 <template>
@@ -57,38 +65,38 @@ const handleCheckout = () => {
   <div 
     ref="drawerEl"
     :class="[
-      'fixed top-20 right-0 h-[calc(100vh-80px)] w-full md:w-96 bg-surface z-40 flex flex-col transition-transform duration-300 shadow-xl',
+      'fixed top-20 right-0 h-[calc(100vh-80px)] w-full sm:w-96 bg-surface z-40 flex flex-col transition-transform duration-300 shadow-xl',
       cartStore.isOpen ? 'translate-x-0' : 'translate-x-full'
     ]"
   >
     <!-- Header -->
-    <div class="border-b border-outline-variant p-4 flex justify-between items-center">
-      <h2 class="font-headline-md text-headline-md text-on-surface">Tu Carrito</h2>
+    <div class="border-b border-outline-variant px-3 py-2 flex justify-between items-center flex-shrink-0">
+      <h2 class="font-headline-md text-headline-md text-on-surface text-sm">Tu Carrito</h2>
       <button 
         @click="closeDrawer"
-        class="text-on-surface hover:opacity-70 transition-opacity"
+        class="text-on-surface hover:opacity-70 transition-opacity p-0.5"
       >
-        <span class="material-symbols-outlined">close</span>
+        <span class="material-symbols-outlined text-lg">close</span>
       </button>
     </div>
 
-    <!-- Items Container -->
-    <div class="flex-1 overflow-y-auto p-4">
-      <div v-if="cartStore.items.length === 0" class="h-full flex items-center justify-center">
+    <!-- Items Container with scroll -->
+    <div class="flex-1 overflow-y-auto">
+      <div v-if="cartStore.items.length === 0" class="h-full flex items-center justify-center px-2 py-4">
         <div class="text-center">
-          <p class="font-body-md text-body-md text-on-surface-variant mb-4">
+          <p class="font-body-md text-body-md text-on-surface-variant mb-4 text-xs">
             Tu carrito está vacío
           </p>
           <button 
             @click="closeDrawer"
-            class="text-primary font-label-caps text-label-caps uppercase hover:opacity-80 transition-opacity"
+            class="text-primary font-label-caps text-label-caps uppercase hover:opacity-80 transition-opacity text-xs"
           >
             Continuar Comprando
           </button>
         </div>
       </div>
 
-      <div v-else class="space-y-4">
+      <div v-else class="space-y-1 px-2 py-2">
         <CartItem 
           v-for="item in cartStore.items"
           :key="item.id"
@@ -100,15 +108,19 @@ const handleCheckout = () => {
       </div>
     </div>
 
-    <!-- Summary and Checkout -->
-    <div v-if="cartStore.items.length > 0" class="border-t border-outline-variant p-4">
-      <CartSummary :items="cartStore.items" />
+    <!-- Summary and Checkout - Sticky at bottom -->
+    <div v-if="cartStore.items.length > 0" class="border-t border-outline-variant px-2 py-2 flex-shrink-0 bg-surface sticky bottom-0">
+      <!-- Quick summary inline -->
+      <div class="flex justify-between items-center mb-1.5 text-xs">
+        <span class="text-on-surface-variant">{{ cartStore.items.length }} art.</span>
+        <span class="font-semibold text-on-surface">{{ formatCurrency(cartStore.items.reduce((acc, item) => acc + (item.cantidad * item.precioUnitario), 0)) }}</span>
+      </div>
       
       <button 
         @click="handleCheckout"
-        class="w-full mt-6 bg-primary text-on-primary px-6 py-4 font-label-caps text-label-caps uppercase hover:opacity-90 transition-opacity"
+        class="w-full bg-primary text-on-primary px-3 py-2 font-label-caps text-label-caps uppercase hover:opacity-90 transition-opacity text-xs rounded font-semibold"
       >
-        Proceder al Checkout
+        Checkout
       </button>
     </div>
   </div>

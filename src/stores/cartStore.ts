@@ -31,13 +31,10 @@ export const useCartStore = defineStore('cart', () => {
   // Computar totales
   const totals = computed(() => {
     const subtotal = items.value.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario), 0)
-    const tax = subtotal * 0.19
-    const total = subtotal + tax
 
     return {
       subtotal: Math.round(subtotal * 100) / 100,
-      tax: Math.round(tax * 100) / 100,
-      total: Math.round(total * 100) / 100,
+      total: Math.round(subtotal * 100) / 100,
     }
   })
 

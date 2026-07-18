@@ -55,8 +55,25 @@ const continueShopping = () => {
           Número de Orden
         </p>
         <p class="font-display-xl text-headline-lg-mobile md:text-headline-lg text-primary uppercase">
-          {{ order.id }}
+          {{ order.orderNumber || order.id }}
         </p>
+      </div>
+
+      <!-- Advisor Message -->
+      <div class="bg-primary/10 border border-primary/30 rounded-lg p-6 mb-8">
+        <div class="flex items-start gap-4">
+          <span class="material-symbols-outlined text-primary text-2xl flex-shrink-0">info</span>
+          <div class="text-left">
+            <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2 uppercase">
+              Próximos Pasos
+            </h3>
+            <p class="font-body-md text-body-md text-on-surface">
+              ¡Gracias por tu compra! Un asesor se contactará contigo en las próximas 24 horas 
+              para confirmar los detalles de tu orden y coordinar el envío. 
+              Asegúrate de mantener tu teléfono disponible.
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- Order Details -->
@@ -120,10 +137,6 @@ const continueShopping = () => {
             <p class="font-body-md text-body-md text-on-surface-variant">Subtotal</p>
             <p class="font-body-md text-body-md text-on-surface">{{ formatCurrency(order.totals.subtotal) }}</p>
           </div>
-          <div class="flex justify-between">
-            <p class="font-body-md text-body-md text-on-surface-variant">Impuesto (19%)</p>
-            <p class="font-body-md text-body-md text-on-surface">{{ formatCurrency(order.totals.tax) }}</p>
-          </div>
           <div class="flex justify-between items-center bg-primary/10 p-3 rounded">
             <p class="font-headline-md text-headline-md text-on-surface">Total</p>
             <p class="font-headline-md text-headline-md text-primary">{{ formatCurrency(order.totals.total) }}</p>
@@ -133,8 +146,8 @@ const continueShopping = () => {
 
       <!-- Message -->
       <p class="font-body-lg text-body-lg text-on-surface-variant mb-8">
-        Se ha enviado una confirmación detallada a tu correo electrónico. 
-        <br/>Rastrearemos tu orden y te notificaremos sobre el estado del envío.
+        Una confirmación detallada ha sido enviada a <strong>{{ order.cliente.email }}</strong>. 
+        Te contactaremos pronto por teléfono.
       </p>
 
       <!-- Continue Shopping Button -->

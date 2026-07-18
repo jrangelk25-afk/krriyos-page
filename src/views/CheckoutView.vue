@@ -25,22 +25,60 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
   uiStore.setLoading(true)
 
   try {
-    // Generar ID de orden
-    const orderId = `KRR-${Date.now()}`
+    // Generar número de orden
+    const orderNumber = `KRR-${Date.now()}`
 
-    // Simular envío de email
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // Preparar datos de la orden para la API
+    const orderData = {
+      orderNumber,
+      fullName: formData.nombre,
+      email: formData.email,
+      phone: formData.telefono,
+      country: formData.pais,
+      city: formData.ciudad,
+      address: formData.direccion,
+      items: cartStore.items.map(item => ({
+        productId: item.productId,
+        size: item.talla,
+        color: item.colorName,
+        quantity: item.cantidad,
+        unitPrice: item.precioUnitario,
+      })),
+      subtotal: cartStore.totals.subtotal,
+      total: cartStore.totals.total,
+    }
 
-    // Crear objeto de orden
+    console.log('📤 Sending order:', orderData)
+
+    // Enviar orden a la API
+    const response = await fetch('/api/public/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData),
+    })
+
+    const result = await response.json()
+
+    console.log('📥 Response status:', response.status)
+    console.log('📥 Response data:', result)
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Error al procesar la orden')
+    }
+
+    // Crear objeto de orden para la vista de confirmación
     const order = {
-      id: orderId,
+      id: result.data.id,
+      orderNumber: result.data.orderNumber,
       fecha: new Date(),
       cliente: formData,
       items: cartStore.items,
       totals: cartStore.totals,
     }
 
-    // Guardar en sessionStorage (no localStorage para privacidad)
+    // Guardar en sessionStorage
     sessionStorage.setItem('krriyos_order', JSON.stringify(order))
 
     // Limpiar carrito
@@ -48,7 +86,7 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
 
     // Mostrar notificación
     uiStore.addNotification(
-      `¡Compra realizada! Número de orden: ${orderId}`,
+      `¡Compra realizada! Número de orden: ${orderNumber}`,
       'success',
       4000
     )
@@ -58,9 +96,10 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
       router.push('/confirmacion')
     }, 500)
   } catch (error) {
-    console.error('Error en checkout:', error)
+    console.error('❌ Error en checkout:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Error al procesar tu compra. Por favor intenta de nuevo.'
     uiStore.addNotification(
-      'Error al procesar tu compra. Por favor intenta de nuevo.',
+      errorMessage,
       'error',
       3000
     )
@@ -128,7 +167,7 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
 
             <!-- Info -->
             <p class="font-body-md text-body-md text-on-surface-variant text-sm mt-6 text-center">
-              Se enviará una confirmación a tu correo electrónico una vez completada la compra.
+              Un asesor se contactará contigo para confirmar la compra y coordinar el envío.
             </p>
           </div>
         </div>

@@ -160,6 +160,7 @@ model OrderItem {
   orderId   String   @map("order_id") @db.Uuid
   productId String   @map("product_id") @db.Uuid
   size      String
+  color     String?
   quantity  Int
   unitPrice Decimal  @map("unit_price") @db.Decimal(10, 2)
   subtotal  Decimal  @db.Decimal(10, 2)

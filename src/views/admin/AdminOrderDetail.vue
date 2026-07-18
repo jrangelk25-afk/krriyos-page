@@ -20,6 +20,7 @@ interface Order {
     id: string
     product: { name: string }
     size: string
+    color?: string
     quantity: number
     unitPrice: string | number
     subtotal: string | number
@@ -133,6 +134,7 @@ onMounted(fetchOrder)
               <tr>
                 <th class="text-left py-3 px-4">Producto</th>
                 <th class="text-left py-3 px-4">Talla</th>
+                <th class="text-left py-3 px-4">Color</th>
                 <th class="text-left py-3 px-4">Cantidad</th>
                 <th class="text-left py-3 px-4">Precio</th>
                 <th class="text-left py-3 px-4">Subtotal</th>
@@ -142,6 +144,7 @@ onMounted(fetchOrder)
               <tr v-for="item in order.items" :key="item.id" class="border-b border-gray-200">
                 <td class="py-3 px-4">{{ item.product.name }}</td>
                 <td class="py-3 px-4">{{ item.size }}</td>
+                <td class="py-3 px-4">{{ item.color || '-' }}</td>
                 <td class="py-3 px-4">{{ item.quantity }}</td>
                 <td class="py-3 px-4">{{ formatCurrency(item.unitPrice) }}</td>
                 <td class="py-3 px-4 font-medium">{{ formatCurrency(item.subtotal) }}</td>
@@ -153,9 +156,8 @@ onMounted(fetchOrder)
         <!-- Totals -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
           <div class="space-y-2 text-right">
-            <p class="text-gray-600">Subtotal: {{ formatCurrency(order.subtotal) }}</p>
-            <p class="text-gray-600">Impuesto: {{ formatCurrency(order.tax) }}</p>
-            <p class="text-lg font-bold text-gray-900">Total: {{ formatCurrency(order.total) }}</p>
+            <p class="text-gray-600">Subtotal: <span class="font-semibold">{{ formatCurrency(order.subtotal) }}</span></p>
+            <p class="text-lg font-bold text-gray-900">Total: <span class="text-blue-600">{{ formatCurrency(order.total) }}</span></p>
           </div>
         </div>
       </div>

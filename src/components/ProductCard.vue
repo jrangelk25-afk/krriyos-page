@@ -7,7 +7,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  addToCart: [product: Product]
+  // Evento removido - ahora usa navegación directa
 }>()
 
 const router = useRouter()
@@ -24,9 +24,9 @@ const goToDetail = () => {
   router.push(`/producto/${props.product.id}`)
 }
 
-const handleAddToCart = (e: Event) => {
+const handleViewProduct = (e: Event) => {
   e.stopPropagation()
-  emit('addToCart', props.product)
+  goToDetail()
 }
 </script>
 
@@ -70,21 +70,12 @@ const handleAddToCart = (e: Event) => {
         {{ product.categoria }}
       </p>
 
-      <!-- Add to Cart Button -->
+      <!-- View Product Button -->
       <button 
-        v-if="product.stock > 0"
-        @click="handleAddToCart"
-        :disabled="product.stock <= 0"
-        class="mt-3 w-full bg-primary text-on-primary px-4 py-2 font-label-caps text-label-caps uppercase text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="handleViewProduct"
+        class="mt-3 w-full bg-primary text-on-primary px-4 py-2 font-label-caps text-label-caps uppercase text-sm hover:opacity-90 transition-opacity"
       >
-        Agregar
-      </button>
-      <button 
-        v-else
-        disabled
-        class="mt-3 w-full bg-surface-variant text-on-surface-variant px-4 py-2 font-label-caps text-label-caps uppercase text-sm cursor-not-allowed"
-      >
-        Agotado
+        Ver
       </button>
     </div>
   </div>

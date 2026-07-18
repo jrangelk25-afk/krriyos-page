@@ -255,19 +255,48 @@ app.get('/api/admin/orders', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' })
     }
 
-    const orders = await prisma.order.findMany({
-      include: {
-        customer: true,
-        items: {
-          include: {
-            product: true,
+    // Get pagination params
+    const page = parseInt(String(req.query.page)) || 1
+    const limit = parseInt(String(req.query.limit)) || 20
+    const statusParam = req.query.status
+
+    // Build where clause
+    let where = {}
+    if (statusParam && statusParam !== 'undefined') {
+      where.status = statusParam
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit
+
+    // Fetch orders with pagination
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ])
 
-    return res.status(200).json(orders)
+    return res.status(200).json({
+      orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    })
   } catch (error) {
     console.error('Orders fetch error:', error)
     return res.status(500).json({ error: 'Internal server error' })
@@ -307,6 +336,48 @@ app.get('/api/admin/orders/:id', async (req, res) => {
     return res.status(200).json(order)
   } catch (error) {
     console.error('Order detail error:', error)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+app.patch('/api/admin/orders/:id', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    const token = authHeader.substring(7)
+    const decoded = verifyToken(token)
+
+    if (!decoded) {
+      return res.status(401).json({ error: 'Invalid token' })
+    }
+
+    const { status, notes } = req.body
+
+    const order = await prisma.order.update({
+      where: { id: req.params.id },
+      data: {
+        ...(status && { status }),
+        ...(notes && { notes }),
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    })
+
+    return res.status(200).json(order)
+  } catch (error) {
+    console.error('Order update error:', error)
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Order not found' })
+    }
     return res.status(500).json({ error: 'Internal server error' })
   }
 })
@@ -1517,6 +1588,233 @@ app.post('/api/admin/delete-image', async (req, res) => {
     return res.status(500).json({
       error: 'Error interno del servidor',
     })
+  }
+})
+
+// ==================== PUBLIC ORDERS ====================
+app.post('/api/public/orders', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  
+  try {
+    console.log('[ORDER] Received order creation request')
+    console.log('[ORDER] Body:', JSON.stringify(req.body, null, 2))
+
+    const { orderNumber, fullName, email, phone, country, city, address, items, subtotal, total } = req.body
+
+    // Validation
+    if (!orderNumber || !fullName || !email || !phone || !country || !city || !address || !items) {
+      console.log('[ORDER] ❌ Missing fields:', {
+        orderNumber: !!orderNumber,
+        fullName: !!fullName,
+        email: !!email,
+        phone: !!phone,
+        country: !!country,
+        city: !!city,
+        address: !!address,
+        items: !!items,
+      })
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+      })
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      console.log('[ORDER] ❌ Invalid items:', items)
+      return res.status(400).json({
+        success: false,
+        error: 'Order must have at least one item',
+      })
+    }
+
+    console.log('[ORDER] ✓ Validation passed')
+    console.log('[ORDER] Creating customer for email:', email)
+
+    // Find or create customer
+    let customer = await prisma.customer.findUnique({
+      where: { email },
+    })
+
+    if (!customer) {
+      console.log('[ORDER] Creating new customer')
+      customer = await prisma.customer.create({
+        data: {
+          email,
+          fullName,
+          phone,
+        },
+      })
+      console.log('[ORDER] ✓ Customer created:', customer.id)
+    } else {
+      console.log('[ORDER] ✓ Customer found:', customer.id)
+    }
+
+    console.log('[ORDER] Creating order with', items.length, 'items')
+
+    // Create order with items and update stock
+    const order = await prisma.order.create({
+      data: {
+        orderNumber,
+        customerId: customer.id,
+        fullName,
+        phone,
+        country,
+        city,
+        address,
+        subtotal: subtotal || 0,
+        tax: 0,
+        total: total || subtotal || 0,
+        status: 'PENDING',
+        items: {
+          create: items.map((item) => ({
+            productId: item.productId,
+            size: item.size,
+            color: item.color,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subtotal: item.quantity * item.unitPrice,
+          })),
+        },
+      },
+      include: {
+        items: true,
+        customer: true,
+      },
+    })
+
+    console.log('[ORDER] ✓ Order created successfully:', order.id)
+
+    // Update product stock and size stock
+    console.log('[ORDER] Updating inventory for products')
+    for (const item of items) {
+      try {
+        // Get current product stock
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+        })
+        if (product) {
+          const newStock = Math.max(0, product.stock - item.quantity)
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: { stock: newStock },
+          })
+          console.log(`[ORDER] ✓ Product ${item.productId} stock: ${product.stock} → ${newStock}`)
+        }
+
+        // Get current product size stock and update
+        const sizes = await prisma.productSize.findMany({
+          where: {
+            productId: item.productId,
+            size: item.size,
+          },
+        })
+        for (const size of sizes) {
+          const newSizeStock = Math.max(0, size.stock - item.quantity)
+          await prisma.productSize.update({
+            where: { id: size.id },
+            data: { stock: newSizeStock },
+          })
+          console.log(`[ORDER] ✓ Product size ${item.size} for ${item.productId}: ${size.stock} → ${newSizeStock}`)
+        }
+      } catch (err) {
+        console.error(`[ORDER] ⚠️ Error updating inventory for item ${item.productId}:`, err.message)
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        customerId: order.customerId,
+        status: order.status,
+        total: order.total,
+        createdAt: order.createdAt,
+      },
+    })
+  } catch (error) {
+    console.error('[ORDER] ❌ Error creating order:', error)
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Error creating order',
+    })
+  }
+})
+
+// ==================== ADMIN CUSTOMERS ====================
+app.options('/api/admin/customers', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  res.status(200).end()
+})
+
+app.get('/api/admin/customers', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  
+  try {
+    console.log('[CUSTOMERS] Request received')
+    console.log('[CUSTOMERS] Headers:', req.headers)
+    
+    const authHeader = req.headers.authorization
+    console.log('[CUSTOMERS] Auth header:', authHeader ? 'present' : 'missing')
+    
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.log('[CUSTOMERS] ❌ No valid auth header')
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    const token = authHeader.substring(7)
+    console.log('[CUSTOMERS] Token:', token.substring(0, 20) + '...')
+    
+    const decoded = verifyToken(token)
+    console.log('[CUSTOMERS] Token verified:', !!decoded)
+    
+    if (!decoded) {
+      console.log('[CUSTOMERS] ❌ Invalid token')
+      return res.status(401).json({ error: 'Invalid token' })
+    }
+
+    const { page, limit } = req.query
+    const pageNum = parseInt(String(page)) || 1
+    const limitNum = parseInt(String(limit)) || 20
+    const skip = (pageNum - 1) * limitNum
+
+    console.log('[CUSTOMERS] Fetching customers - page:', pageNum, 'limit:', limitNum)
+
+    const [customers, total] = await Promise.all([
+      prisma.customer.findMany({
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          isNewsletterSubscriber: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      prisma.customer.count(),
+    ])
+
+    console.log('[CUSTOMERS] ✓ Found', customers.length, 'customers out of', total, 'total')
+
+    return res.status(200).json({
+      customers,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum),
+      },
+    })
+  } catch (error) {
+    console.error('[CUSTOMERS] ❌ Error:', error)
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error' })
   }
 })
 

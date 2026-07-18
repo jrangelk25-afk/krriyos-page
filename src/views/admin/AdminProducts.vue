@@ -235,17 +235,18 @@ const removeImage = (index: number) => {
 <template>
   <AdminLayout>
     <div class="space-y-6">
-      <div class="flex justify-between items-center">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Productos</h1>
-          <p class="mt-2 text-gray-600">Gestiona tu catálogo de productos</p>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Productos</h1>
+          <p class="mt-2 text-sm sm:text-base text-gray-600">Gestiona tu catálogo de productos</p>
         </div>
         <button
           @click="openModal()"
-          class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          class="bg-blue-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center sm:justify-start gap-2 text-sm sm:text-base whitespace-nowrap"
         >
-          <span class="material-symbols-outlined">add</span>
-          Nuevo Producto
+          <span class="material-symbols-outlined text-lg">add</span>
+          <span class="hidden sm:inline">Nuevo</span>
+          <span class="sm:hidden">+</span>
         </button>
       </div>
 
@@ -262,80 +263,66 @@ const removeImage = (index: number) => {
       </div>
 
       <div v-else class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table class="w-full">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Imagen</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">SKU</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nombre</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Categoría</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Precio</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Stock</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tallas</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Etiquetas</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Estado</th>
-              <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="product in products" :key="product.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4">
-                <img 
-                  v-if="(product as any).images?.[0]?.imageUrl"
-                  :src="(product as any).images[0].imageUrl" 
-                  :alt="product.name"
-                  class="h-10 w-10 object-cover rounded"
-                />
-                <div v-else class="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
-                  <span class="material-symbols-outlined text-sm text-gray-400">image</span>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-sm font-mono text-gray-600">{{ product.sku }}</td>
-              <td class="px-6 py-4 text-sm text-gray-900">{{ product.name }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ product.category?.name || 'N/A' }}</td>
-              <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ formatCurrency(parseFloat(String(product.price))) }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ product.stock }}</td>
-              <td class="px-6 py-4 text-sm">
-                <span v-if="(product as any).sizes?.length" class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  {{ (product as any).sizes.length }} talla{{ (product as any).sizes.length !== 1 ? 's' : '' }}
-                </span>
-                <span v-else class="text-gray-400 text-xs">Sin tallas</span>
-              </td>
-              <td class="px-6 py-4 text-sm space-x-2">
-                <span v-if="product.isNewArrival" class="inline-block px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  Nuevo
-                </span>
-                <span v-if="product.isOutlet" class="inline-block px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  Outlet
-                </span>
-              </td>
-              <td class="px-6 py-4 text-sm">
-                <span :class="[
-                  'px-2 py-1 rounded-full text-xs font-medium',
-                  product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                ]">
-                  {{ product.isActive ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-sm text-right space-x-2">
-                <button
-                  @click="goToEdit(product.id)"
-                  class="text-blue-600 hover:text-blue-800 transition-colors"
-                  title="Editar"
-                >
-                  <span class="material-symbols-outlined text-lg">edit</span>
-                </button>
-                <button
-                  @click="handleDelete(product.id)"
-                  class="text-red-600 hover:text-red-800 transition-colors"
-                  title="Eliminar"
-                >
-                  <span class="material-symbols-outlined text-lg">delete</span>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Imagen</th>
+                <th class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">SKU</th>
+                <th class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Nombre</th>
+                <th class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Categoría</th>
+                <th class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Precio</th>
+                <th class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Stock</th>
+                <th class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Estado</th>
+                <th class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-right text-xs sm:text-sm font-semibold text-gray-700">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="product in products" :key="product.id" class="hover:bg-gray-50">
+                <td class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
+                  <img 
+                    v-if="(product as any).images?.[0]?.imageUrl"
+                    :src="(product as any).images[0].imageUrl" 
+                    :alt="product.name"
+                    class="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded"
+                  />
+                  <div v-else class="h-8 w-8 sm:h-10 sm:w-10 bg-gray-200 rounded flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xs sm:text-sm text-gray-400">image</span>
+                  </div>
+                </td>
+                <td class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm font-mono text-gray-600">{{ product.sku }}</td>
+                <td class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-gray-900">{{ product.name }}</td>
+                <td class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-gray-600">{{ product.category?.name || 'N/A' }}</td>
+                <td class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm font-medium text-gray-900">{{ formatCurrency(parseFloat(String(product.price))) }}</td>
+                <td class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-gray-600">{{ product.stock }}</td>
+                <td class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm">
+                  <span :class="[
+                    'px-2 py-1 rounded-full text-xs font-medium',
+                    product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  ]">
+                    {{ product.isActive ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-right space-x-1 sm:space-x-2">
+                  <button
+                    @click="goToEdit(product.id)"
+                    class="text-blue-600 hover:text-blue-800 transition-colors"
+                    title="Editar"
+                  >
+                    <span class="material-symbols-outlined text-base sm:text-lg">edit</span>
+                  </button>
+                  <button
+                    @click="handleDelete(product.id)"
+                    class="text-red-600 hover:text-red-800 transition-colors"
+                    title="Eliminar"
+                  >
+                    <span class="material-symbols-outlined text-base sm:text-lg">delete</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Modal Crear Producto -->

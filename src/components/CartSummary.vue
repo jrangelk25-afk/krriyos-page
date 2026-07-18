@@ -17,12 +17,8 @@ const subtotal = () => {
   return props.items.reduce((acc: number, item: CartItem) => acc + (item.cantidad * item.precioUnitario), 0)
 }
 
-const tax = () => {
-  return subtotal() * 0.19
-}
-
 const total = () => {
-  return subtotal() + tax()
+  return subtotal()
 }
 
 const itemCount = () => {
@@ -31,38 +27,28 @@ const itemCount = () => {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-1 sm:space-y-2">
     <!-- Items Summary -->
-    <div class="bg-surface-bright rounded-lg p-4 border border-outline-variant">
-      <div class="flex justify-between items-center mb-2">
-        <p class="font-label-md text-label-md text-on-surface-variant uppercase">
-          {{ itemCount() }} Artículo{{ itemCount() !== 1 ? 's' : '' }}
+    <div class="bg-surface-bright rounded-lg p-1.5 sm:p-3 border border-outline-variant">
+      <div class="flex justify-between items-center gap-2">
+        <p class="font-label-md text-label-md text-on-surface-variant uppercase text-xs">
+          {{ itemCount() }} Art.
         </p>
-        <p class="font-label-md text-label-md text-on-surface">
+        <p class="font-label-md text-label-md text-on-surface text-xs">
           {{ formatCurrency(subtotal()) }}
         </p>
       </div>
     </div>
 
     <!-- Breakdown -->
-    <div class="space-y-3 p-4 border border-outline-variant rounded-lg">
+    <div class="space-y-1 p-1.5 sm:p-3 border border-outline-variant rounded-lg">
       <!-- Subtotal -->
-      <div class="flex justify-between items-center">
-        <p class="font-body-md text-body-md text-on-surface-variant">
+      <div class="flex justify-between items-center gap-2">
+        <p class="font-body-md text-body-md text-on-surface-variant text-xs">
           Subtotal
         </p>
-        <p class="font-label-caps text-label-caps text-on-surface">
+        <p class="font-label-caps text-label-caps text-on-surface text-xs">
           {{ formatCurrency(subtotal()) }}
-        </p>
-      </div>
-
-      <!-- Tax -->
-      <div class="flex justify-between items-center">
-        <p class="font-body-md text-body-md text-on-surface-variant">
-          Impuesto (19%)
-        </p>
-        <p class="font-label-caps text-label-caps text-on-surface">
-          {{ formatCurrency(tax()) }}
         </p>
       </div>
 
@@ -70,11 +56,11 @@ const itemCount = () => {
       <div class="h-px bg-outline-variant"></div>
 
       <!-- Total -->
-      <div class="flex justify-between items-center">
-        <p class="font-headline-md text-headline-md text-on-surface">
+      <div class="flex justify-between items-center gap-2">
+        <p class="font-headline-md text-headline-md text-on-surface text-sm">
           Total
         </p>
-        <p class="font-headline-lg text-headline-lg text-primary">
+        <p class="font-headline-lg text-headline-lg text-primary text-sm">
           {{ formatCurrency(total()) }}
         </p>
       </div>
