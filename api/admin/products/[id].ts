@@ -105,10 +105,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       console.log('Product ID:', id)
       console.log('Full body:', JSON.stringify(req.body, null, 2))
       
-      const { name, description, price, categoryId, sku, stock, isNewArrival, isOutlet, isActive, image, images, sizes, colors } = req.body
+      const { name, description, price, categoryId, sku, stock, discountPercentage, isNewArrival, isOutlet, isActive, image, images, sizes, colors } = req.body
 
       console.log('Destructured values:')
       console.log('- name:', name)
+      console.log('- discountPercentage:', discountPercentage)
       console.log('- colors exists:', !!colors)
       console.log('- colors is array:', Array.isArray(colors))
       console.log('- colors length:', colors?.length)
@@ -126,6 +127,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       if (categoryId) updateData.categoryId = categoryId
       if (sku) updateData.sku = sku
       if (stock !== undefined) updateData.stock = parseInt(stock)
+      if (discountPercentage !== undefined) {
+        updateData.discountPercentage = parseInt(discountPercentage)
+      }
       
       // Handle boolean values - they may come as strings or booleans
       if (isNewArrival !== undefined) {
@@ -140,6 +144,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
       console.log('Update payload received:', req.body)
       console.log('Update data to be saved:', updateData)
+      console.log('====== CRITICAL: discountPercentage in updateData:', updateData.discountPercentage, '======')
 
       // Manejar imágenes múltiples
       if (images && Array.isArray(images) && images.length > 0) {
@@ -390,6 +395,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       console.log('Final updateData before product update:', updateData)
 
       // Ahora actualizar el producto
+      console.log('🔴 ABOUT TO UPDATE PRODUCT WITH DATA:', JSON.stringify(updateData, null, 2))
       const product = await prisma.product.update({
         where: { id },
         data: updateData,
@@ -421,6 +427,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       })
 
       console.log('Product updated successfully')
+      console.log('🔴 PRODUCT RESPONSE discountPercentage:', product.discountPercentage)
       console.log('Product colors in response:', product.colors)
       console.log('Product colors count:', product.colors?.length || 0)
       console.log('Product sizes in response:', product.sizes)

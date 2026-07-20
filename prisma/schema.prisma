@@ -23,25 +23,26 @@ model Category {
 }
 
 model Product {
-  id           String         @id @default(uuid()) @db.Uuid
-  sku          String         @unique
-  name         String
-  description  String?
-  price        Decimal        @db.Decimal(10, 2)
-  categoryId   String         @map("category_id") @db.Uuid
-  stock        Int            @default(0)
-  isNewArrival Boolean        @default(false) @map("is_new_arrival")
-  isOutlet     Boolean        @default(false) @map("is_outlet")
-  isActive     Boolean        @default(true) @map("is_active")
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  createdBy    String?        @map("created_by") @db.Uuid
-  updatedBy    String?        @map("updated_by") @db.Uuid
-  orderItems   OrderItem[]
-  colors       ProductColor[]
-  images       ProductImage[]
-  sizes        ProductSize[]
-  category     Category       @relation(fields: [categoryId], references: [id])
+  id                   String         @id @default(uuid()) @db.Uuid
+  sku                  String         @unique
+  name                 String
+  description          String?
+  price                Decimal        @db.Decimal(10, 2)
+  discountPercentage   Int            @default(0) @map("discount_percentage")
+  categoryId           String         @map("category_id") @db.Uuid
+  stock                Int            @default(0)
+  isNewArrival         Boolean        @default(false) @map("is_new_arrival")
+  isOutlet             Boolean        @default(false) @map("is_outlet")
+  isActive             Boolean        @default(true) @map("is_active")
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy            String?        @map("created_by") @db.Uuid
+  updatedBy            String?        @map("updated_by") @db.Uuid
+  orderItems           OrderItem[]
+  colors               ProductColor[]
+  images               ProductImage[]
+  sizes                ProductSize[]
+  category             Category       @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
   @@index([sku])

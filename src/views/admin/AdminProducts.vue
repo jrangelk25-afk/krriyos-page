@@ -11,6 +11,7 @@ interface Product {
   sku: string
   name: string
   price: string | number
+  discountPercentage?: number
   stock: number
   isActive: boolean
   isNewArrival: boolean
@@ -135,7 +136,6 @@ const handleSubmit = async () => {
         const imageUrl = await uploadImage(file, 'products')
         
         if (!imageUrl) {
-          console.error(`Error al subir imagen ${i + 1}`)
           continue
         }
 
@@ -157,13 +157,9 @@ const handleSubmit = async () => {
 
           if (!response.ok) {
             const error = await response.json()
-            console.error(`Error asociando imagen ${i + 1}:`, error)
-          } else {
-            const imageData = await response.json()
-            console.log(`Imagen ${i + 1} asociada correctamente:`, imageData.id)
           }
         } catch (err) {
-          console.error(`Error en request de imagen ${i + 1}:`, err)
+          // Error handling
         }
       }
     }
@@ -272,6 +268,7 @@ const removeImage = (index: number) => {
                 <th class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Nombre</th>
                 <th class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Categoría</th>
                 <th class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Precio</th>
+                <th class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Descuento</th>
                 <th class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Stock</th>
                 <th class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Estado</th>
                 <th class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-right text-xs sm:text-sm font-semibold text-gray-700">Acciones</th>
@@ -294,6 +291,12 @@ const removeImage = (index: number) => {
                 <td class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-gray-900">{{ product.name }}</td>
                 <td class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-gray-600">{{ product.category?.name || 'N/A' }}</td>
                 <td class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm font-medium text-gray-900">{{ formatCurrency(parseFloat(String(product.price))) }}</td>
+                <td class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm">
+                  <span v-if="product.isOutlet && product.discountPercentage" class="px-2 py-1 bg-red-100 text-red-800 rounded-full font-bold">
+                    -{{ product.discountPercentage }}%
+                  </span>
+                  <span v-else class="text-gray-400">-</span>
+                </td>
                 <td class="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-gray-600">{{ product.stock }}</td>
                 <td class="hidden md:table-cell px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm">
                   <span :class="[

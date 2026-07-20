@@ -23,7 +23,6 @@ export const useProductStore = defineStore('products', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Error loading categories'
-      console.error('Error loading categories:', err)
     } finally {
       isLoading.value = false
     }
@@ -55,21 +54,13 @@ export const useProductStore = defineStore('products', () => {
 
       if (result.success) {
         allProducts.value = result.data.map((product: any) => {
-          // Debug logging
-          if (!product.categoryId) {
-            console.warn('⚠️ Producto sin categoryId:', {
-              id: product.id,
-              name: product.name,
-              category: product.category?.name,
-              categoryId: product.categoryId,
-            })
-          }
           return {
             id: product.id,
             sku: product.sku,
             nombre: product.name,
             descripcion: product.description,
             precio: parseFloat(product.price),
+            discountPercentage: product.discountPercentage || 0,
             imagenes: product.images
               ?.sort((a: any, b: any) => a.displayOrder - b.displayOrder)
               ?.map((img: any) => img.imageUrl) || [],
@@ -97,7 +88,6 @@ export const useProductStore = defineStore('products', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Error loading products'
-      console.error('Error loading products:', err)
     } finally {
       isLoading.value = false
     }
@@ -116,6 +106,7 @@ export const useProductStore = defineStore('products', () => {
           nombre: result.data.name,
           descripcion: result.data.description,
           precio: parseFloat(result.data.price),
+          discountPercentage: result.data.discountPercentage || 0,
           imagenes: result.data.images
             ?.sort((a: any, b: any) => a.displayOrder - b.displayOrder)
             ?.map((img: any) => img.imageUrl) || [],
@@ -142,7 +133,6 @@ export const useProductStore = defineStore('products', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Error loading product'
-      console.error('Error loading product:', err)
       return null
     }
   }

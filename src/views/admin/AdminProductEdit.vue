@@ -48,6 +48,7 @@ const formData = ref({
   name: '',
   sku: '',
   price: '',
+  discountPercentage: 0,
   stock: 0,
   categoryId: '',
   description: '',
@@ -63,28 +64,18 @@ const fetchData = async () => {
   try {
     loading.value = true
     const productId = route.params.id as string
-    console.log('Fetching product:', productId)
 
     const [productData, categoriesData] = await Promise.all([
       getProduct(productId),
       fetchCategories(),
     ])
 
-    console.log('🔍 Product data received:')
-    console.log('   - ID:', productData.id)
-    console.log('   - Name:', productData.name)
-    console.log('   - Sizes array:', productData.sizes)
-    console.log('   - Sizes length:', productData.sizes?.length)
-    console.log('   - Sizes is array:', Array.isArray(productData.sizes))
-    if (productData.sizes && Array.isArray(productData.sizes)) {
-      console.log('   - First size:', productData.sizes[0])
-    }
-
     formData.value = {
       id: productData.id,
       name: productData.name,
       sku: productData.sku,
       price: productData.price.toString(),
+      discountPercentage: productData.discountPercentage || 0,
       stock: productData.stock,
       categoryId: productData.categoryId,
       description: productData.description || '',
@@ -106,25 +97,15 @@ const fetchData = async () => {
         displayOrder: img.displayOrder || 0,
         isPrimary: img.isPrimary || false,
       }))
-      console.log('✅ Images loaded successfully:', productImages.value)
-    } else {
-      console.warn('⚠️ No images found in product data:', productData.images)
     }
 
     // Procesar tallas
-    console.log('📦 Processing sizes...')
     if (productData.sizes && Array.isArray(productData.sizes) && productData.sizes.length > 0) {
       productSizes.value = productData.sizes.map((size: any) => {
         // Extraer los colorIds desde la relación ProductSizeColor
         const colorIds = size.colors && Array.isArray(size.colors)
           ? size.colors.map((sizeColor: any) => sizeColor.color?.id).filter(Boolean)
           : []
-        
-        console.log(`Size ${size.size}:`, {
-          id: size.id,
-          colors: size.colors,
-          colorIds: colorIds,
-        })
         
         return {
           id: size.id,
@@ -133,22 +114,13 @@ const fetchData = async () => {
           colorIds: colorIds, // Array de IDs de colores vinculados
         }
       })
-      console.log('✅ Sizes loaded successfully:')
-      console.log('   - Total sizes:', productSizes.value.length)
-      console.log('   - Sizes data:', productSizes.value)
     } else {
-      console.warn('⚠️ No sizes found in product data', {
-        sizes: productData.sizes,
-        isArray: Array.isArray(productData.sizes),
-        length: productData.sizes?.length,
-      })
       productSizes.value = []
     }
 
     categories.value = categoriesData
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Error fetching product'
-    console.error('❌ Error fetching product:', err)
   } finally {
     loading.value = false
   }
@@ -242,6 +214,7 @@ const handleSubmit = async () => {
       name: formData.value.name,
       sku: formData.value.sku,
       price: parseFloat(formData.value.price),
+      discountPercentage: formData.value.discountPercentage,
       stock: totalStock,
       categoryId: formData.value.categoryId,
       description: formData.value.description,
@@ -262,13 +235,8 @@ const handleSubmit = async () => {
       })),
       sizes: sizesWithoutColors,
     }
-    
-    console.log('UpdatePayload sizes:', updatePayload.sizes)
-    console.log('UpdatePayload colors:', updatePayload.colors)
-    console.log('UpdatePayload JSON:', JSON.stringify(updatePayload, null, 2))
 
     const response = await updateProduct(formData.value.id, updatePayload)
-    console.log('Response from server:', response)
     router.push('/admin/products')
   } catch (err) {
     formError.value = err instanceof Error ? err.message : 'Error updating product'
@@ -279,6 +247,14 @@ const handleSubmit = async () => {
 
 const goBack = () => {
   router.push('/admin/products')
+}
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value)
 }
 
 onMounted(fetchData)
@@ -372,6 +348,27 @@ onMounted(fetchData)
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min="0"
               />
+            </div>
+          </div>
+
+          <!-- Descuento (solo si es outlet) -->
+          <div v-if="formData.isOutlet" class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <label class="block text-sm font-semibold text-gray-900 mb-2">Porcentaje de Descuento (%)</label>
+            <div class="flex items-center gap-4">
+              <input
+                v-model.number="formData.discountPercentage"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div class="text-sm text-gray-700">
+                <p class="font-semibold">Precio final:</p>
+                <p class="text-blue-600 font-bold">
+                  {{ formatCurrency(parseFloat(formData.price) * (1 - formData.discountPercentage / 100)) }}
+                </p>
+              </div>
             </div>
           </div>
 

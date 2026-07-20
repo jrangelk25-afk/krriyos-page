@@ -24,12 +24,8 @@ const fetchData = async () => {
   try {
     loading.value = true
     error.value = null
-    console.log('📥 Fetching customers...')
     
     const response = await fetchCustomers(page.value, limit.value)
-    console.log('📦 Raw response:', response)
-    console.log('📦 Response type:', typeof response)
-    console.log('📦 Is array:', Array.isArray(response))
     
     // Handle both formats: { customers: [...] } and [...]
     let customersData = []
@@ -37,19 +33,13 @@ const fetchData = async () => {
     if (Array.isArray(response)) {
       // If response is directly an array
       customersData = response
-      console.log('✅ Response is array:', customersData.length)
     } else if (response?.customers && Array.isArray(response.customers)) {
       // If response has customers property
       customersData = response.customers
-      console.log('✅ Response has customers property:', customersData.length)
-    } else {
-      console.warn('⚠️ Unexpected response format:', response)
     }
     
     customers.value = customersData
-    console.log('✅ Customers loaded:', customers.value.length)
   } catch (err) {
-    console.error('❌ Error fetching customers:', err)
     error.value = err instanceof Error ? err.message : 'Error fetching customers'
   } finally {
     loading.value = false
@@ -65,7 +55,6 @@ const formatDate = (date: string) => {
 }
 
 onMounted(() => {
-  console.log('🔄 AdminCustomers component mounted')
   fetchData()
 })
 </script>

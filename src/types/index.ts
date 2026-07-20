@@ -15,6 +15,7 @@ export interface Product {
   nombre: string
   descripcion: string
   precio: number
+  discountPercentage?: number
   imagenes: string[]
   categoria: string
   categoryId?: string

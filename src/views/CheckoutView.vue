@@ -48,8 +48,6 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
       total: cartStore.totals.total,
     }
 
-    console.log('📤 Sending order:', orderData)
-
     // Enviar orden a la API
     const response = await fetch('/api/public/orders', {
       method: 'POST',
@@ -60,9 +58,6 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
     })
 
     const result = await response.json()
-
-    console.log('📥 Response status:', response.status)
-    console.log('📥 Response data:', result)
 
     if (!response.ok || !result.success) {
       throw new Error(result.error || 'Error al procesar la orden')
@@ -96,7 +91,6 @@ const handleCheckoutSubmit = async (formData: CheckoutFormData) => {
       router.push('/confirmacion')
     }, 500)
   } catch (error) {
-    console.error('❌ Error en checkout:', error)
     const errorMessage = error instanceof Error ? error.message : 'Error al procesar tu compra. Por favor intenta de nuevo.'
     uiStore.addNotification(
       errorMessage,

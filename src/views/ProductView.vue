@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
@@ -61,6 +61,21 @@ const formatCurrency = (value: number) => {
     minimumFractionDigits: 0,
   }).format(value)
 }
+
+// Calcular precio con descuento
+const precioConDescuento = computed(() => {
+  if (!product.value) return 0
+  if (product.value.isOutlet && product.value.discountPercentage) {
+    const descuento = (product.value.precio * product.value.discountPercentage) / 100
+    return product.value.precio - descuento
+  }
+  return product.value.precio
+})
+
+const descuentoAplicado = computed(() => {
+  if (!product.value) return 0
+  return product.value.isOutlet && product.value.discountPercentage ? product.value.discountPercentage : 0
+})
 </script>
 
 <template>
@@ -139,7 +154,18 @@ const formatCurrency = (value: number) => {
           <div class="space-y-2">
             <!-- Precio -->
             <div class="space-y-1">
-              <p class="font-headline-md text-headline-md text-primary">
+              <div v-if="descuentoAplicado > 0" class="flex items-center gap-3">
+                <p class="font-headline-md text-headline-md text-error font-bold">
+                  {{ formatCurrency(precioConDescuento) }}
+                </p>
+                <p class="text-sm text-on-surface-variant line-through">
+                  {{ formatCurrency(product.precio) }}
+                </p>
+                <span class="bg-error text-on-error text-[11px] font-bold px-2 py-0.5 rounded">
+                  -{{ descuentoAplicado }}%
+                </span>
+              </div>
+              <p v-else class="font-headline-md text-headline-md text-primary">
                 {{ formatCurrency(product.precio) }}
               </p>
             </div>

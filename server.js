@@ -499,6 +499,7 @@ app.post('/api/admin/products', async (req, res) => {
     const productData = {
       ...req.body,
       price: parseFloat(req.body.price),
+      discountPercentage: req.body.discountPercentage ? parseInt(req.body.discountPercentage) : 0,
       stock: parseInt(req.body.stock) || 0,
       isNewArrival: parseBoolean(req.body.isNewArrival),
       isOutlet: parseBoolean(req.body.isOutlet),
@@ -530,11 +531,12 @@ app.put('/api/admin/products/:id', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' })
     }
 
-    const { name, description, price, categoryId, sku, stock, isNewArrival, isOutlet, isActive, image, images, sizes, colors } = req.body
+    const { name, description, price, discountPercentage, categoryId, sku, stock, isNewArrival, isOutlet, isActive, image, images, sizes, colors } = req.body
     const updateData = {}
 
     console.log('=== PUT PRODUCTS/:ID ===')
     console.log('Product ID:', req.params.id)
+    console.log('Discount Percentage:', discountPercentage)
     console.log('Sizes received:', sizes)
     console.log('Colors received:', colors)
 
@@ -547,6 +549,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
     if (name) updateData.name = name
     if (description) updateData.description = description
     if (price) updateData.price = parseFloat(price)
+    if (discountPercentage !== undefined) updateData.discountPercentage = parseInt(discountPercentage)
     if (categoryId) updateData.categoryId = categoryId
     if (sku) updateData.sku = sku
     if (stock !== undefined) updateData.stock = parseInt(stock)

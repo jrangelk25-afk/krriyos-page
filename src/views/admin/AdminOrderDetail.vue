@@ -7,6 +7,7 @@ import { getOrder, updateOrder } from '../../lib/adminApi'
 interface Order {
   id: string
   orderNumber: string
+  phone: string
   customer: { fullName: string; email: string }
   address: string
   city: string
@@ -93,6 +94,8 @@ onMounted(fetchOrder)
           
           <div class="grid grid-cols-2 gap-6">
             <div>
+              <p class="text-sm text-gray-600">Teléfono del Cliente</p>
+              <p class="text-lg font-semibold text-gray-900 mb-4">{{ order.phone }}</p>
               <p class="text-sm text-gray-600">Cliente</p>
               <p class="text-lg font-medium text-gray-900">{{ order.customer.fullName }}</p>
               <p class="text-sm text-gray-600">{{ order.customer.email }}</p>

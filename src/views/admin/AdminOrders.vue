@@ -48,7 +48,6 @@ const fetchData = async (page = 1, status = '') => {
     currentPage.value = page
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Error fetching orders'
-    console.error('Error fetching orders:', err)
   } finally {
     loading.value = false
   }

@@ -1,5 +1,5 @@
-import type { ApiRequest, ApiResponse } from '../../types'
-const { PrismaClient } = require('@prisma/client')
+import type { ApiRequest, ApiResponse } from '../types'
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -60,7 +60,7 @@ export default async function handler(
       where: {
         color: {
           product: {
-            id: { in: products.map(p => p.id) }
+            id: { in: products.map((p: any) => p.id) }
           }
         }
       },
@@ -71,7 +71,7 @@ export default async function handler(
 
     // Create Map for fast lookup
     const sizeColorMap = new Map<string, any[]>()
-    allSizeColorMappings.forEach(mapping => {
+    allSizeColorMappings.forEach((mapping: any) => {
       const key = mapping.sizeId
       if (!sizeColorMap.has(key)) {
         sizeColorMap.set(key, [])
@@ -98,9 +98,7 @@ export default async function handler(
       data: enrichedProducts,
     })
   } catch (error) {
-    console.error('Error fetching products:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error('Error details:', errorMessage)
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch products',

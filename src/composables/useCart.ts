@@ -25,6 +25,13 @@ export const useCart = () => {
       return false
     }
 
+    // Calcular precio con descuento si aplica
+    let precioFinal = product.precio
+    if (product.isOutlet && product.discountPercentage) {
+      const descuento = (product.precio * product.discountPercentage) / 100
+      precioFinal = product.precio - descuento
+    }
+
     // Crear ID único considerando producto + talla + color
     const cartItemId = colorId ? `${product.id}-${talla}-${colorId}` : `${product.id}-${talla}`
     const cartItem: CartItem = {
@@ -35,7 +42,7 @@ export const useCart = () => {
       talla,
       colorId,
       colorName,
-      precioUnitario: product.precio,
+      precioUnitario: precioFinal,
     }
 
     cartStore.addToCart(cartItem)

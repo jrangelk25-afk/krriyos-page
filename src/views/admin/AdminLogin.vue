@@ -39,7 +39,7 @@ const handleSubmit = async () => {
     await authStore.login(formData.email, formData.password)
     router.push('/admin/dashboard')
   } catch (error) {
-    console.error('Login failed:', error)
+    // Login failed
   }
 }
 </script>

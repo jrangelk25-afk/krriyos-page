@@ -15,7 +15,7 @@ export const useCartStore = defineStore('cart', () => {
         items.value = data.items || []
       }
     } catch (error) {
-      console.error('Error cargando carrito:', error)
+      // Error loading cart
     }
   }
 
@@ -24,7 +24,7 @@ export const useCartStore = defineStore('cart', () => {
     try {
       localStorage.setItem('krriyos_cart', JSON.stringify({ items: items.value }))
     } catch (error) {
-      console.error('Error guardando carrito:', error)
+      // Error saving cart
     }
   }
 

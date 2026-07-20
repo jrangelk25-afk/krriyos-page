@@ -164,13 +164,13 @@ onMounted(async () => {
                 :src="getImageForCategory(products.categories[1].id)"
                 :alt="products.categories[1].name"
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                style="object-position: center 74%"
               />
             </div>
             <div class="absolute inset-0 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-t from-ink-black/80 via-ink-black/30 to-transparent rounded-lg">
               <div></div>
               <div class="text-on-primary w-full">
                 <h3 class="font-display-sm md:font-display-md text-display-sm md:text-display-md uppercase mb-2 md:mb-3 tracking-widest font-bold">{{ products.categories[1].name }}</h3>
-                <p class="font-label-md text-label-md uppercase mb-3 md:mb-4 text-xs md:text-sm tracking-wider">{{ products.categories[1].description }}</p>
                 <button class="border-2 border-on-primary text-on-primary px-4 md:px-5 py-2 md:py-2.5 font-label-caps text-label-caps uppercase text-xs md:text-xs hover:bg-on-primary hover:text-ink-black transition-all duration-300 tracking-widest">
                   Buy Now
                 </button>
@@ -189,13 +189,13 @@ onMounted(async () => {
                 :src="getImageForCategory(products.categories[2].id)"
                 :alt="products.categories[2].name"
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                style="object-position: center 74%"
               />
             </div>
             <div class="absolute inset-0 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-t from-ink-black/80 via-ink-black/30 to-transparent rounded-lg">
               <div></div>
               <div class="text-on-primary w-full">
                 <h3 class="font-display-sm md:font-display-md text-display-sm md:text-display-md uppercase mb-2 md:mb-3 tracking-widest font-bold">{{ products.categories[2].name }}</h3>
-                <p class="font-label-md text-label-md uppercase mb-3 md:mb-4 text-xs md:text-sm tracking-wider">{{ products.categories[2].description }}</p>
                 <button class="border-2 border-on-primary text-on-primary px-4 md:px-5 py-2 md:py-2.5 font-label-caps text-label-caps uppercase text-xs md:text-xs hover:bg-on-primary hover:text-ink-black transition-all duration-300 tracking-widest">
                   Buy Now
                 </button>

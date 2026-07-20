@@ -20,7 +20,6 @@ onMounted(() => {
     try {
       order.value = JSON.parse(orderData)
     } catch (error) {
-      console.error('Error loading order:', error)
       router.push('/catalogo')
     }
   } else {

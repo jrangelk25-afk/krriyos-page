@@ -15,6 +15,7 @@ interface Order {
   id: string
   orderNumber: string
   customer: { fullName: string }
+  customerId: string
   total: string | number
   status: string
   createdAt: string
@@ -72,6 +73,40 @@ const formatCurrency = (value: number) => {
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('es-ES')
 }
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'PROCESSING':
+      return 'bg-blue-100 text-blue-800'
+    case 'SHIPPED':
+      return 'bg-purple-100 text-purple-800'
+    case 'DELIVERED':
+      return 'bg-green-100 text-green-800'
+    case 'CANCELLED':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'PENDING':
+      return 'Pendiente'
+    case 'PROCESSING':
+      return 'En proceso'
+    case 'SHIPPED':
+      return 'Enviado'
+    case 'DELIVERED':
+      return 'Entregado'
+    case 'CANCELLED':
+      return 'Cancelado'
+    default:
+      return status
+  }
+}
 </script>
 
 <template>
@@ -122,6 +157,7 @@ const formatDate = (date: string) => {
                   <th class="text-left py-3 px-4 font-semibold text-gray-700">Número</th>
                   <th class="text-left py-3 px-4 font-semibold text-gray-700">Cliente</th>
                   <th class="text-left py-3 px-4 font-semibold text-gray-700">Total</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-700">Estado</th>
                   <th class="text-left py-3 px-4 font-semibold text-gray-700">Fecha</th>
                 </tr>
               </thead>
@@ -130,6 +166,11 @@ const formatDate = (date: string) => {
                   <td class="py-3 px-4">{{ order.orderNumber }}</td>
                   <td class="py-3 px-4">{{ order.customer.fullName }}</td>
                   <td class="py-3 px-4 font-semibold">{{ formatCurrency(parseFloat(order.total as string)) }}</td>
+                  <td class="py-3 px-4">
+                    <span :class="['px-2 py-1 rounded-full text-xs font-semibold', getStatusColor(order.status)]">
+                      {{ getStatusLabel(order.status) }}
+                    </span>
+                  </td>
                   <td class="py-3 px-4">{{ formatDate(order.createdAt) }}</td>
                 </tr>
               </tbody>
