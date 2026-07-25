@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
+import { useMetaTags } from '../composables/useMeta'
 import ProductCard from '../components/ProductCard.vue'
 
 const products = useProducts()
@@ -13,6 +14,15 @@ const componentMounted = ref(false)
 const transitionKey = ref(0)
 
 onMounted(async () => {
+  // Actualizar meta tags para outlet
+  useMetaTags({
+    title: 'Outlet | krriyos - Descuentos en Calzado Premium',
+    description: 'Aprovecha nuestras mejores ofertas en calzado premium. Descuentos especiales en sneakers, botas y urban wear.',
+    image: '/logo.webp',
+    url: '/outlet',
+    type: 'website',
+  })
+
   // SIEMPRE limpiar filtros al entrar a la vista del outlet
   products.clearFilters()
   

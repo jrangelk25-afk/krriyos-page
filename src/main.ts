@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import './style.css'
 import App from './App.vue'
+import { resetMetaTags } from './composables/useMeta'
 
 // Views - Public pages (imported directly for faster initial load)
 import HomeView from './views/HomeView.vue'
@@ -150,6 +151,10 @@ const router = createRouter({
 router.beforeEach((_to, _from) => {
   // La validación de autenticación se hace en el componente AdminLayout
   // Solo permitimos pasar y el componente checa en onMounted
+  
+  // Restaurar meta tags por defecto cuando se cambia de ruta
+  // Las vistas individuales pueden actualizar los meta tags una vez carguen
+  resetMetaTags()
 })
 
 /**
