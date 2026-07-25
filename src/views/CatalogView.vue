@@ -19,6 +19,9 @@ const componentMounted = ref(false)
 const transitionKey = ref(0)
 
 onMounted(async () => {
+  // SIEMPRE limpiar filtros al entrar a la vista del catálogo
+  products.clearFilters()
+  
   // Cargar datos desde la BD si no están cargados
   if (products.allProducts.length === 0) {
     await products.initializeData()
