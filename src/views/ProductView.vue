@@ -10,9 +10,9 @@ const router = useRouter()
 const products = useProducts()
 const cart = useCart()
 
-const product = ref<any>(null)
+const product = ref<any | null>(null)
 const isLoading = ref(false)
-const currentImageIndex = ref(0)
+const currentImageIndex = ref<number>(0)
 
 // Cargar producto del servidor (para obtener todos los colores correctamente)
 onMounted(async () => {
@@ -21,14 +21,14 @@ onMounted(async () => {
   
   try {
     // Intentar obtener del store primero
-    let prod = products.getById(productId)
+    let prod: any = products.getById(productId)
     
     // Si no está en el store, cargar del servidor
     if (!prod) {
       prod = await products.loadProductById(productId)
     }
     
-    product.value = prod
+    product.value = prod || null
     
     if (!product.value) {
       router.push('/catalogo')
@@ -154,7 +154,7 @@ const descuentoAplicado = computed(() => {
             <button 
               v-for="(img, index) in product.imagenes"
               :key="index"
-              @click="currentImageIndex = index"
+              @click="currentImageIndex = Number(index)"
               :class="[
                 'flex-shrink-0 w-14 h-16 rounded-lg overflow-hidden border-2 transition-all',
                 index === currentImageIndex 
@@ -164,7 +164,7 @@ const descuentoAplicado = computed(() => {
             >
               <img 
                 :src="img"
-                :alt="`Thumbnail ${index + 1}`"
+                :alt="`Thumbnail ${Number(index) + 1}`"
                 class="w-full h-full object-cover"
               />
             </button>

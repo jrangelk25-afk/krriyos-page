@@ -16,13 +16,24 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id) {
           // Separate vendor libraries
-          'vendor-core': ['vue', 'vue-router', 'pinia'],
-          'vendor-utils': ['jsonwebtoken', 'jwt-decode'],
-          'vendor-ui': ['zustand'],
+          if (id.includes('node_modules')) {
+            if (id.includes('vue') || id.includes('vue-router') || id.includes('pinia')) {
+              return 'vendor-core'
+            }
+            if (id.includes('jsonwebtoken') || id.includes('jwt-decode')) {
+              return 'vendor-utils'
+            }
+            if (id.includes('zustand')) {
+              return 'vendor-ui'
+            }
+            return 'vendor'
+          }
           // Lazy-loaded admin chunk
-          'admin': ['./src/views/admin/AdminDashboard.vue', './src/views/admin/AdminProducts.vue']
+          if (id.includes('AdminDashboard') || id.includes('AdminProducts')) {
+            return 'admin'
+          }
         }
       }
     },
