@@ -63,6 +63,179 @@ app.use(cors())
 app.use(express.json({ limit: '15mb' }))
 app.use(express.urlencoded({ limit: '15mb', extended: true }))
 
+// ==================== META TAGS INJECTION ====================
+// Función para detectar si el request viene de un crawler
+const isCrawler = (userAgent = '') => {
+  const crawlers = ['facebookexternalhit', 'twitterbot', 'whatsapp', 'linkedinbot', 'discordbot', 'slurp', 'bingbot', 'googlebot', 'baiduspider']
+  return crawlers.some(crawler => userAgent.toLowerCase().includes(crawler))
+}
+
+// Función para generar HTML con meta tags dinámicos
+const generateHTMLWithMetaTags = (metaData) => {
+  const baseUrl = 'https://krriyos-page-production.up.railway.app'
+  const fullImageUrl = metaData.image?.startsWith('http') ? metaData.image : `${baseUrl}${metaData.image}`
+  const fullUrl = metaData.url?.startsWith('http') ? metaData.url : `${baseUrl}${metaData.url}`
+
+  return `<!DOCTYPE html>
+<html lang="es" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="${metaData.description}" />
+    <meta name="keywords" content="zapatillas, sneakers, botas, urban wear, krriyos, calzado premium, zapatos high-end" />
+    <meta name="author" content="krriyos" />
+    <meta name="theme-color" content="#001531" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="${metaData.type || 'website'}" />
+    <meta property="og:url" content="${fullUrl}" />
+    <meta property="og:title" content="${metaData.title}" />
+    <meta property="og:description" content="${metaData.description}" />
+    <meta property="og:image" content="${fullImageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="krriyos" />
+    <meta property="og:locale" content="es_CO" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${metaData.title}" />
+    <meta name="twitter:description" content="${metaData.description}" />
+    <meta name="twitter:image" content="${fullImageUrl}" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="${fullUrl}" />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="/icon.webp" type="image/webp" />
+    
+    <title>${metaData.title}</title>
+    
+    <!-- Meta refresh para redirigir después de que el crawler lea los tags -->
+    <meta http-equiv="refresh" content="0; url=${fullUrl.replace(/^https?:\/\/[^\/]+/, '')}" />
+  </head>
+  <body>
+    <!-- El contenido real se carga en client-side -->
+  </body>
+</html>`
+}
+
+// Middleware para interceptar URLs de producto y generar meta tags
+app.get('/producto/:id', async (req, res, next) => {
+  try {
+    const userAgent = req.get('user-agent') || ''
+    
+    // Si es un crawler, devolver HTML con meta tags específicos
+    if (isCrawler(userAgent)) {
+      const productId = req.params.id
+      
+      // Intentar obtener el producto de la BD
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+        include: {
+          images: {
+            orderBy: { displayOrder: 'asc' },
+            take: 1,
+          },
+        },
+      })
+
+      if (product) {
+        const description = product.description 
+          ? product.description.split('\n')[0].substring(0, 160)
+          : `${product.name} - Calzado premium de Krriyos`
+        
+        // Usar la imagen del producto si existe, sino usar icon.webp
+        const imageUrl = (product.images && product.images.length > 0) 
+          ? product.images[0].imageUrl 
+          : '/icon.webp'
+
+        const html = generateHTMLWithMetaTags({
+          title: `${product.name} | krriyos - Orgullosos de Caminar Contigo`,
+          description: description,
+          image: imageUrl,
+          url: `/producto/${productId}`,
+          type: 'product',
+        })
+
+        res.set('Content-Type', 'text/html; charset=utf-8')
+        return res.send(html)
+      }
+    }
+
+    // Si no es crawler o no encontró el producto, pasar al siguiente middleware
+    next()
+  } catch (error) {
+    console.error('Meta tags generation error:', error)
+    next()
+  }
+})
+
+// Middleware para rutas sin ID - usan icon.webp
+app.get('/catalogo', (req, res, next) => {
+  const userAgent = req.get('user-agent') || ''
+  if (isCrawler(userAgent)) {
+    const html = generateHTMLWithMetaTags({
+      title: 'Catálogo | krriyos - Orgullosos de Caminar Contigo',
+      description: 'Explora nuestra completa colección de sneakers, urban wear y botas premium.',
+      image: '/icon.webp',
+      url: '/catalogo',
+      type: 'website',
+    })
+    res.set('Content-Type', 'text/html; charset=utf-8')
+    return res.send(html)
+  }
+  next()
+})
+
+app.get('/outlet', (req, res, next) => {
+  const userAgent = req.get('user-agent') || ''
+  if (isCrawler(userAgent)) {
+    const html = generateHTMLWithMetaTags({
+      title: 'Outlet | krriyos - Descuentos en Calzado Premium',
+      description: 'Aprovecha nuestras mejores ofertas en calzado premium.',
+      image: '/icon.webp',
+      url: '/outlet',
+      type: 'website',
+    })
+    res.set('Content-Type', 'text/html; charset=utf-8')
+    return res.send(html)
+  }
+  next()
+})
+
+app.get('/nuevos', (req, res, next) => {
+  const userAgent = req.get('user-agent') || ''
+  if (isCrawler(userAgent)) {
+    const html = generateHTMLWithMetaTags({
+      title: 'Nuevos | krriyos - Últimas Llegadas',
+      description: 'Descubre los últimos lanzamientos en sneakers, urban wear y botas.',
+      image: '/icon.webp',
+      url: '/nuevos',
+      type: 'website',
+    })
+    res.set('Content-Type', 'text/html; charset=utf-8')
+    return res.send(html)
+  }
+  next()
+})
+
+app.get('/', (req, res, next) => {
+  const userAgent = req.get('user-agent') || ''
+  if (isCrawler(userAgent)) {
+    const html = generateHTMLWithMetaTags({
+      title: 'krriyos - Orgullosos de Caminar Contigo',
+      description: 'Descubre nuestra colección premium de calzado de alto rendimiento. Sneakers, Urban wear y botas diseñadas para el futuro.',
+      image: '/icon.webp',
+      url: '/',
+      type: 'website',
+    })
+    res.set('Content-Type', 'text/html; charset=utf-8')
+    return res.send(html)
+  }
+  next()
+})
+
 // Middleware para verificar token
 const verifyToken = (token) => {
   try {
