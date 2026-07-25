@@ -1,7 +1,5 @@
 import type { ApiRequest, ApiResponse } from '../../types';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { getPrisma } from '../../../lib/prisma';
 
 /**
  * GET /api/public/products/[id]/colors-by-size?size=M
@@ -14,6 +12,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   try {
+    const prisma = getPrisma()
     const { id } = req.query;
     const { size } = req.query;
 

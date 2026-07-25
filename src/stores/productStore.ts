@@ -8,6 +8,11 @@ export const useProductStore = defineStore('products', () => {
   const filters = ref<ProductFilters>({})
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  
+  // Pagination
+  const currentPage = ref(1)
+  const pageSize = ref(20)
+  const totalProducts = ref(0)
 
   // Función para cargar categorías desde la BD
   const loadCategories = async () => {
@@ -28,8 +33,8 @@ export const useProductStore = defineStore('products', () => {
     }
   }
 
-  // Función para cargar productos desde la BD
-  const loadProducts = async (categoryId?: string, isOutlet?: boolean, isNew?: boolean) => {
+  // Función para cargar productos desde la BD con paginación
+  const loadProducts = async (categoryId?: string, isOutlet?: boolean, isNew?: boolean, page: number = 1) => {
     try {
       isLoading.value = true
       let url = '/api/public/products'
@@ -44,6 +49,10 @@ export const useProductStore = defineStore('products', () => {
       if (isNew) {
         params.push('isNew=true')
       }
+      
+      // Agregar paginación
+      params.push(`page=${page}`)
+      params.push(`limit=${pageSize.value}`)
 
       if (params.length > 0) {
         url += '?' + params.join('&')
@@ -53,7 +62,7 @@ export const useProductStore = defineStore('products', () => {
       const result = await response.json()
 
       if (result.success) {
-        allProducts.value = result.data.map((product: any) => {
+        const mappedProducts = result.data.map((product: any) => {
           return {
             id: product.id,
             sku: product.sku,
@@ -74,7 +83,7 @@ export const useProductStore = defineStore('products', () => {
               colorId: s.colorId,
               colorName: s.color?.name,
               quantity: s.stock,
-              availableColors: s.availableColors || [], // ✅ NUEVO
+              availableColors: s.availableColors || [],
             })) || [],
             stock: product.stock,
             isNewArrival: product.isNewArrival,
@@ -83,6 +92,17 @@ export const useProductStore = defineStore('products', () => {
             allImages: product.images?.sort((a: any, b: any) => a.displayOrder - b.displayOrder) || [],
           }
         })
+        
+        // Si es primera página, reemplazar. Si no, agregar (para infinite scroll)
+        if (page === 1) {
+          allProducts.value = mappedProducts
+        } else {
+          allProducts.value.push(...mappedProducts)
+        }
+        
+        // Actualizar estado de paginación
+        currentPage.value = result.pagination.page
+        totalProducts.value = result.pagination.total
       } else {
         throw new Error(result.error || 'Failed to load products')
       }
@@ -91,6 +111,11 @@ export const useProductStore = defineStore('products', () => {
     } finally {
       isLoading.value = false
     }
+  }
+
+  // Función para cargar siguiente página
+  const loadNextPage = async (categoryId?: string, isOutlet?: boolean, isNew?: boolean) => {
+    await loadProducts(categoryId, isOutlet, isNew, currentPage.value + 1)
   }
 
   // Función para cargar un producto individual
@@ -119,7 +144,7 @@ export const useProductStore = defineStore('products', () => {
             colorId: s.colorId,
             colorName: s.color?.name,
             quantity: s.stock,
-            availableColors: s.availableColors || [], // ✅ NUEVO
+            availableColors: s.availableColors || [],
           })) || [],
           stock: result.data.stock,
           isNewArrival: result.data.isNewArrival,
@@ -201,6 +226,10 @@ export const useProductStore = defineStore('products', () => {
     }
   })
 
+  const hasMorePages = computed(() => {
+    return currentPage.value * pageSize.value < totalProducts.value
+  })
+
   // Actions
   const applyFilter = (newFilters: ProductFilters) => {
     filters.value = { ...filters.value, ...newFilters }
@@ -234,6 +263,10 @@ export const useProductStore = defineStore('products', () => {
     newArrivals,
     outletProducts,
     productsByCategory,
+    currentPage,
+    pageSize,
+    totalProducts,
+    hasMorePages,
     applyFilter,
     clearFilters,
     getProductById,
@@ -243,6 +276,7 @@ export const useProductStore = defineStore('products', () => {
     loadCategories,
     loadProducts,
     loadProductById,
+    loadNextPage,
     isLoading,
     error,
   }

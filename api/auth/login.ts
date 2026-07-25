@@ -1,9 +1,7 @@
 import type { ApiRequest, ApiResponse } from '../types'
 import jwt from 'jsonwebtoken'
-const { PrismaClient } = require('@prisma/client')
+import { getPrisma } from '../../lib/prisma'
 import bcrypt from 'bcrypt'
-
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 const JWT_EXPIRES_IN = '7d'
 
@@ -45,6 +43,7 @@ export default async function handler(
   }
 
   try {
+    const prisma = getPrisma()
     const { email, password } = req.body as LoginRequest
 
     // Validar entrada
@@ -129,7 +128,5 @@ export default async function handler(
     return res.status(500).json({
       error: 'Error interno del servidor',
     })
-  } finally {
-    await prisma.$disconnect()
   }
 }

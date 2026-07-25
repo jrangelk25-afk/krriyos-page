@@ -6,6 +6,7 @@
   },
   "deploy": {
     "startCommand": "pnpm start",
+    "preDeploy": "pnpm migrate",
     "restartPolicyMaxRetries": 5,
     "restartPolicyWindowSeconds": 600,
     "healthchecks": {

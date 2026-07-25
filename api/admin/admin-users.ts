@@ -1,9 +1,7 @@
 import type { ApiRequest, ApiResponse } from '../types'
-const { PrismaClient } = require('@prisma/client')
+import { getPrisma } from '../../lib/prisma'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 const verifyToken = (token: string) => {
@@ -42,6 +40,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   try {
+    const prisma = getPrisma()
+    
     if (req.method === 'GET') {
       const adminUsers = await prisma.adminUser.findMany({
         select: {
@@ -100,7 +100,5 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     }
 
     return res.status(500).json({ error: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }

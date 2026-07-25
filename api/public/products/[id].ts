@@ -1,7 +1,5 @@
 import type { ApiRequest, ApiResponse } from '../../types'
-const { PrismaClient } = require('@prisma/client')
-
-const prisma = new PrismaClient()
+import { getPrisma } from '../../../lib/prisma'
 
 export default async function handler(
   req: ApiRequest,
@@ -22,6 +20,7 @@ export default async function handler(
   }
 
   try {
+    const prisma = getPrisma()
     const { id } = req.query
 
     if (!id || typeof id !== 'string') {
@@ -31,6 +30,7 @@ export default async function handler(
       })
     }
 
+    // QUERY 1: Get product with basic data (NO nested includes para evitar N+1)
     const product = await prisma.product.findFirst({
       where: {
         AND: [
@@ -59,37 +59,38 @@ export default async function handler(
       })
     }
 
-    // Enrich sizes with available colors
-    const enrichedSizes = await Promise.all(
-      product.sizes.map(async (size: any) => {
-        // Get colors specific to this size from the ProductSizeColor junction table
-        // Solo obtener colores para esta talla específica
-        const sizeColors = await prisma.productSizeColor.findMany({
-          where: {
-            sizeId: size.id, // ✅ Solo esta talla específica
+    // QUERY 2: Batch fetch ALL size-color mappings en UNA sola query
+    const sizeIds = product.sizes.map((s: any) => s.id)
+    const sizeColorMappings = await prisma.productSizeColor.findMany({
+      where: {
+        sizeId: { in: sizeIds }, // ✅ Todos en una query
+      },
+      include: {
+        color: {
+          select: {
+            id: true,
+            name: true,
+            hexCode: true,
           },
-          include: {
-            color: true,
-          },
-        })
+        },
+      },
+    })
 
-        console.log(`DEBUG [size ${size.size}]: encontrados ${sizeColors.length} colores en product_size_colors`)
-        sizeColors.forEach((sc: any) => console.log(`  - ${sc.color.name}`))
+    // Enrich sizes con los colores (EN MEMORIA, sin queries adicionales)
+    const enrichedSizes = product.sizes.map((size: any) => {
+      const availableColors = sizeColorMappings
+        .filter((mapping: any) => mapping.sizeId === size.id) // ✅ Filter en memoria
+        .map((mapping: any) => ({
+          id: mapping.color.id,
+          name: mapping.color.name,
+          hexCode: mapping.color.hexCode,
+        }))
 
-        // Map to colors
-        const availableColors = sizeColors
-          .map((mapping: any) => ({
-            id: mapping.color.id,
-            name: mapping.color.name,
-            hexCode: mapping.color.hexCode,
-          }))
-
-        return {
-          ...size,
-          availableColors,
-        }
-      })
-    )
+      return {
+        ...size,
+        availableColors,
+      }
+    })
 
     // Return product with enriched sizes
     return res.status(200).json({
@@ -106,7 +107,5 @@ export default async function handler(
       error: 'Failed to fetch product',
       details: error instanceof Error ? error.message : 'Unknown error',
     })
-  } finally {
-    await prisma.$disconnect()
   }
 }

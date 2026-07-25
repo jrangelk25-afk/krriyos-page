@@ -1,8 +1,7 @@
 import type { ApiRequest, ApiResponse } from '../../../types'
-const { PrismaClient } = require('@prisma/client')
+import { getPrisma } from '../../../../lib/prisma'
 import jwt from 'jsonwebtoken'
 
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 const verifyToken = (token: string) => {
@@ -36,6 +35,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const { productId } = req.query as { productId: string }
 
   try {
+    const prisma = getPrisma()
     if (req.method === 'GET') {
       // Obtener todas las tallas de un producto
       const sizes = await prisma.productSize.findMany({
@@ -98,7 +98,5 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     }
 
     return res.status(500).json({ error: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }

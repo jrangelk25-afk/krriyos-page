@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
@@ -10,12 +10,36 @@ const router = useRouter()
 const products = useProducts()
 const cart = useCart()
 
-const product = ref(products.getById(route.params.id as string))
+const product = ref<any>(null)
+const isLoading = ref(false)
 const currentImageIndex = ref(0)
 
-if (!product.value) {
-  router.push('/catalogo')
-}
+// Cargar producto del servidor (para obtener todos los colores correctamente)
+onMounted(async () => {
+  isLoading.value = true
+  const productId = route.params.id as string
+  
+  try {
+    // Intentar obtener del store primero
+    let prod = products.getById(productId)
+    
+    // Si no está en el store, cargar del servidor
+    if (!prod) {
+      prod = await products.loadProductById(productId)
+    }
+    
+    product.value = prod
+    
+    if (!product.value) {
+      router.push('/catalogo')
+    }
+  } catch (error) {
+    console.error('Error loading product:', error)
+    router.push('/catalogo')
+  } finally {
+    isLoading.value = false
+  }
+})
 
 const handleAddToCart = (details: {
   size: string
@@ -150,8 +174,13 @@ const descuentoAplicado = computed(() => {
         <!-- RIGHT: DETAILS + SELECTOR (1/2) -->
         <div class="flex flex-col gap-4 order-1 lg:order-2">
           
+          <!-- Loading indicator -->
+          <div v-if="isLoading" class="flex items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+
           <!-- PRICE & BASIC INFO -->
-          <div class="space-y-2">
+          <div v-show="!isLoading" class="space-y-2">
             <!-- Precio -->
             <div class="space-y-1">
               <div v-if="descuentoAplicado > 0" class="flex items-center gap-3">
@@ -177,7 +206,7 @@ const descuentoAplicado = computed(() => {
           </div>
 
           <!-- PRODUCT DETAILS -->
-          <div class="space-y-2 border-t border-b border-outline-variant py-3">
+          <div v-show="!isLoading" class="space-y-2 border-t border-b border-outline-variant py-3">
             <!-- Nombre -->
             <div>
               <h1 class="font-headline-sm text-headline-sm text-on-surface">
@@ -219,7 +248,7 @@ const descuentoAplicado = computed(() => {
           </div>
 
           <!-- SIZE & COLOR SELECTOR -->
-          <div v-if="product.stock > 0" class="space-y-3">
+          <div v-if="product.stock > 0 && !isLoading" class="space-y-3">
             <ProductSizeColorMatrix 
               :product-id="product.id"
               :product-name="product.nombre"
@@ -227,7 +256,7 @@ const descuentoAplicado = computed(() => {
             />
           </div>
 
-          <div v-else class="bg-surface-bright rounded-lg p-4 border-2 border-error/20 text-center">
+          <div v-else-if="!isLoading" class="bg-surface-bright rounded-lg p-4 border-2 border-error/20 text-center">
             <p class="text-on-surface-variant font-body-md">
               Producto no disponible
             </p>

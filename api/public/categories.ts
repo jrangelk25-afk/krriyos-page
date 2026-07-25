@@ -1,7 +1,9 @@
 import type { ApiRequest, ApiResponse } from '../../types'
-const { PrismaClient } = require('@prisma/client')
+import { getPrisma } from '../../../lib/prisma'
+import { getCachedOrFetch, deleteCachePattern } from '../../../lib/cache'
 
-const prisma = new PrismaClient()
+const CATEGORIES_CACHE_KEY = 'categories:active'
+const CATEGORIES_CACHE_TTL = 24 * 60 * 60 // 24 hours
 
 export default async function handler(
   req: ApiRequest,
@@ -22,10 +24,20 @@ export default async function handler(
   }
 
   try {
-    const categories = await prisma.category.findMany({
-      where: { isActive: true },
-      orderBy: { displayOrder: 'asc' },
-    })
+    const prisma = getPrisma()
+    
+    // Try to get from cache first, otherwise fetch from DB
+    const categories = await getCachedOrFetch(
+      CATEGORIES_CACHE_KEY,
+      async () => {
+        const data = await prisma.category.findMany({
+          where: { isActive: true },
+          orderBy: { displayOrder: 'asc' },
+        })
+        return data
+      },
+      CATEGORIES_CACHE_TTL
+    )
 
     return res.status(200).json({
       success: true,
@@ -37,7 +49,5 @@ export default async function handler(
       success: false,
       error: 'Failed to fetch categories',
     })
-  } finally {
-    await prisma.$disconnect()
   }
 }

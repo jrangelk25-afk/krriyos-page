@@ -1,9 +1,13 @@
 import type { ApiRequest, ApiResponse } from '../types'
-const { PrismaClient } = require('@prisma/client')
+import { getPrisma } from '../../lib/prisma'
 import jwt from 'jsonwebtoken'
 
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+
+// Caching simple para dashboard (5 minutos)
+let cachedDashboardData: any = null
+let lastDashboardUpdate = 0
+const DASHBOARD_CACHE_TTL = 5 * 60 * 1000 // 5 minutos
 
 // Middleware para verificar token
 const verifyToken = (token: string) => {
@@ -42,61 +46,63 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(401).json({ error: 'Invalid token' })
     }
 
-    // Obtener estadísticas
-    const totalOrders = await prisma.order.count()
-    const totalCustomers = await prisma.customer.count()
-    const totalProducts = await prisma.product.count()
+    const prisma = getPrisma()
 
-    // Ingresos totales
-    const orderStats = await prisma.order.aggregate({
-      _sum: {
-        total: true,
-      },
-    })
+    // Verificar si hay datos en cache
+    const now = Date.now()
+    if (cachedDashboardData && (now - lastDashboardUpdate) < DASHBOARD_CACHE_TTL) {
+      console.log('✓ Dashboard data from cache (age: ' + (now - lastDashboardUpdate) + 'ms)')
+      return res.status(200).json(cachedDashboardData)
+    }
 
-    // Órdenes recientes
-    const recentOrders = await prisma.order.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        customer: true,
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    })
-
-    // Productos con bajo stock
-    const lowStockProducts = await prisma.product.findMany({
-      where: {
-        stock: {
-          lte: 5,
-        },
-      },
-      take: 5,
-      orderBy: { stock: 'asc' },
-    })
-
-    // Órdenes por mes (últimos 6 meses)
+    // Paralelizar todas las queries usando Promise.all para máximo performance
     const sixMonthsAgo = new Date()
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-    const ordersByMonth = await prisma.order.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: {
-          gte: sixMonthsAgo,
+    const [totalOrders, totalCustomers, totalProducts, orderStats, recentOrders, lowStockProducts, ordersByMonth] = await Promise.all([
+      prisma.order.count(),
+      prisma.customer.count(),
+      prisma.product.count(),
+      prisma.order.aggregate({
+        _sum: { total: true },
+      }),
+      prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: true,
+            },
+          },
         },
-      },
-      _sum: {
-        total: true,
-      },
-      _count: true,
-    })
+      }),
+      prisma.product.findMany({
+        where: {
+          stock: {
+            lte: 5,
+          },
+        },
+        take: 5,
+        orderBy: { stock: 'asc' },
+      }),
+      prisma.order.groupBy({
+        by: ['createdAt'],
+        where: {
+          createdAt: {
+            gte: sixMonthsAgo,
+          },
+        },
+        _sum: {
+          total: true,
+        },
+        _count: true,
+      }),
+    ])
 
-    return res.status(200).json({
+    // Construir respuesta
+    const dashboardData = {
       stats: {
         totalOrders,
         totalCustomers,
@@ -106,11 +112,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       recentOrders,
       lowStockProducts,
       salesByMonth: ordersByMonth,
-    })
+    }
+
+    // Guardar en cache
+    cachedDashboardData = dashboardData
+    lastDashboardUpdate = now
+
+    return res.status(200).json(dashboardData)
   } catch (error) {
     console.error('Dashboard error:', error)
     return res.status(500).json({ error: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }

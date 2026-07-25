@@ -23,44 +23,46 @@ model Category {
 }
 
 model Product {
-  id                   String         @id @default(uuid()) @db.Uuid
-  sku                  String         @unique
-  name                 String
-  description          String?
-  price                Decimal        @db.Decimal(10, 2)
-  discountPercentage   Int            @default(0) @map("discount_percentage")
-  categoryId           String         @map("category_id") @db.Uuid
-  stock                Int            @default(0)
-  isNewArrival         Boolean        @default(false) @map("is_new_arrival")
-  isOutlet             Boolean        @default(false) @map("is_outlet")
-  isActive             Boolean        @default(true) @map("is_active")
-  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  createdBy            String?        @map("created_by") @db.Uuid
-  updatedBy            String?        @map("updated_by") @db.Uuid
-  orderItems           OrderItem[]
-  colors               ProductColor[]
-  images               ProductImage[]
-  sizes                ProductSize[]
-  category             Category       @relation(fields: [categoryId], references: [id])
+  id                 String         @id @default(uuid()) @db.Uuid
+  sku                String         @unique
+  name               String
+  description        String?
+  price              Decimal        @db.Decimal(10, 2)
+  discountPercentage Int            @default(0) @map("discount_percentage")
+  categoryId         String         @map("category_id") @db.Uuid
+  stock              Int            @default(0)
+  isNewArrival       Boolean        @default(false) @map("is_new_arrival")
+  isOutlet           Boolean        @default(false) @map("is_outlet")
+  isActive           Boolean        @default(true) @map("is_active")
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy          String?        @map("created_by") @db.Uuid
+  updatedBy          String?        @map("updated_by") @db.Uuid
+  orderItems         OrderItem[]
+  colors             ProductColor[]
+  images             ProductImage[]
+  sizes              ProductSize[]
+  category           Category       @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
   @@index([sku])
   @@index([isActive])
   @@index([isOutlet])
+  @@index([categoryId, isActive, isOutlet])
+  @@index([categoryId, isActive])
   @@map("products")
 }
 
 model ProductColor {
-  id           String              @id @default(uuid()) @db.Uuid
-  productId    String              @map("product_id") @db.Uuid
+  id           String             @id @default(uuid()) @db.Uuid
+  productId    String             @map("product_id") @db.Uuid
   name         String?
-  hexCode      String?             @map("hex_code")
-  displayOrder Int                 @default(0) @map("display_order")
-  isActive     Boolean             @default(true) @map("is_active")
-  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  product      Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  hexCode      String?            @map("hex_code")
+  displayOrder Int                @default(0) @map("display_order")
+  isActive     Boolean            @default(true) @map("is_active")
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  product      Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   images       ProductImage[]
   sizes        ProductSizeColor[]
 
@@ -69,13 +71,13 @@ model ProductColor {
 }
 
 model ProductSize {
-  id        String              @id @default(uuid()) @db.Uuid
-  productId String              @map("product_id") @db.Uuid
+  id        String             @id @default(uuid()) @db.Uuid
+  productId String             @map("product_id") @db.Uuid
   size      String
-  stock     Int                 @default(0)
-  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  product   Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stock     Int                @default(0)
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  product   Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   colors    ProductSizeColor[]
 
   @@unique([productId, size])
@@ -153,6 +155,7 @@ model Order {
   @@index([customerId])
   @@index([status])
   @@index([createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
   @@map("orders")
 }
 
@@ -203,6 +206,7 @@ model AuditLog {
 
   @@index([adminUserId])
   @@index([createdAt(sort: Desc)])
+  @@index([adminUserId, createdAt(sort: Desc)])
   @@map("audit_log")
 }
 

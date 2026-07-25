@@ -1,8 +1,6 @@
 import type { ApiRequest, ApiResponse } from '../../../types';
-import { PrismaClient } from '@prisma/client';
+import { getPrisma } from '../../../../lib/prisma';
 import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
 
 const verifyToken = (token: string) => {
   try {
@@ -18,6 +16,7 @@ const verifyToken = (token: string) => {
  */
 async function handleGet(req: ApiRequest, res: ApiResponse) {
   try {
+    const prisma = getPrisma()
     const { id } = req.query;
 
     if (!id || typeof id !== 'string') {
@@ -85,6 +84,7 @@ async function handleGet(req: ApiRequest, res: ApiResponse) {
  */
 async function handlePost(req: ApiRequest, res: ApiResponse) {
   try {
+    const prisma = getPrisma()
     const auth = req.headers.authorization;
     if (!auth) {
       return res.status(401).json({ error: 'Unauthorized' });

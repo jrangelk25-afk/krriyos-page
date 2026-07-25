@@ -4,7 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import './style.css'
 import App from './App.vue'
 
-// Views
+// Views - Public pages (imported directly for faster initial load)
 import HomeView from './views/HomeView.vue'
 import CatalogView from './views/CatalogView.vue'
 import OutletView from './views/OutletView.vue'
@@ -14,15 +14,18 @@ import CheckoutView from './views/CheckoutView.vue'
 import ConfirmationView from './views/ConfirmationView.vue'
 import AboutView from './views/AboutView.vue'
 import AdminLoginView from './views/admin/AdminLogin.vue'
-import AdminDashboard from './views/admin/AdminDashboard.vue'
-import AdminProducts from './views/admin/AdminProducts.vue'
-import AdminCategories from './views/admin/AdminCategories.vue'
-import AdminOrders from './views/admin/AdminOrders.vue'
-import AdminOrderDetail from './views/admin/AdminOrderDetail.vue'
-import AdminCustomers from './views/admin/AdminCustomers.vue'
-import AdminUsers from './views/admin/AdminUsers.vue'
-import AdminAuditLogs from './views/admin/AdminAuditLogs.vue'
-import AdminSettings from './views/admin/AdminSettings.vue'
+
+// Admin views - Lazy loaded for code splitting
+const AdminDashboard = () => import('./views/admin/AdminDashboard.vue')
+const AdminProducts = () => import('./views/admin/AdminProducts.vue')
+const AdminCategories = () => import('./views/admin/AdminCategories.vue')
+const AdminOrders = () => import('./views/admin/AdminOrders.vue')
+const AdminOrderDetail = () => import('./views/admin/AdminOrderDetail.vue')
+const AdminCustomers = () => import('./views/admin/AdminCustomers.vue')
+const AdminUsers = () => import('./views/admin/AdminUsers.vue')
+const AdminAuditLogs = () => import('./views/admin/AdminAuditLogs.vue')
+const AdminSettings = () => import('./views/admin/AdminSettings.vue')
+const AdminProductEdit = () => import('./views/admin/AdminProductEdit.vue')
 
 const routes = [
   {
@@ -99,7 +102,7 @@ const routes = [
   {
     path: '/admin/products/:id/edit',
     name: 'AdminProductEdit',
-    component: () => import('./views/admin/AdminProductEdit.vue'),
+    component: AdminProductEdit,
   },
   {
     path: '/admin/categories',

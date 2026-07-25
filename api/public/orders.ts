@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { getPrisma } from '../lib/prisma'
 import type { ApiRequest, ApiResponse } from '../types'
-
-const prisma = new PrismaClient()
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -20,6 +18,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   try {
+    const prisma = getPrisma()
     const { orderNumber, fullName, email, phone, country, city, address, items, subtotal, total } = req.body
 
     // Validation
@@ -99,7 +98,5 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       success: false,
       error: error instanceof Error ? error.message : 'Error creating order',
     })
-  } finally {
-    await prisma.$disconnect()
   }
 }

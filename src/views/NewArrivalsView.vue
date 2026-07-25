@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
-import gsap from 'gsap'
 import ProductCard from '../components/ProductCard.vue'
 
 const products = useProducts()
@@ -11,6 +10,7 @@ const cart = useCart()
 const sortBy = ref<string>('nombre')
 const isLoading = ref(false)
 const componentMounted = ref(false)
+const transitionKey = ref(0)
 
 onMounted(async () => {
   // Cargar datos desde la BD si no están cargados
@@ -23,31 +23,7 @@ onMounted(async () => {
 
   // Marcar como montado para evitar que watchers se disparen durante setup
   componentMounted.value = true
-
-  // Initial animation
-  nextTick(() => {
-    animateProducts()
-  })
 })
-
-const animateProducts = () => {
-  // Fade out and animate in with stagger
-  const cards = document.querySelectorAll('.product-card')
-  
-  gsap.fromTo(cards,
-    {
-      opacity: 0,
-      y: 30,
-    },
-    {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      stagger: 0.08,
-      ease: 'power2.out',
-    }
-  )
-}
 
 watch(sortBy, async (newSort) => {
   if (!componentMounted.value) return
@@ -55,21 +31,11 @@ watch(sortBy, async (newSort) => {
   isLoading.value = true
   products.sortBy(newSort)
   
-  await nextTick()
+  // Re-render con nueva key
+  transitionKey.value++
   
-  // Fade out
-  const cards = document.querySelectorAll('.product-card')
-  gsap.to(cards, {
-    opacity: 0,
-    y: -30,
-    duration: 0.3,
-  })
-  
-  // Animar entrada
-  setTimeout(() => {
-    animateProducts()
-    isLoading.value = false
-  }, 300)
+  await new Promise(resolve => setTimeout(resolve, 300))
+  isLoading.value = false
 })
 
 const handleAddToCart = (product: any) => {
@@ -129,15 +95,15 @@ const clearNewFilter = () => {
 
         <!-- Products Grid -->
         <div 
-          ref="catalogContainer"
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 transition-opacity duration-300"
+          :key="transitionKey"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 transition-opacity duration-300 animate-fadeIn"
           :class="{ 'opacity-50': isLoading }"
         >
           <ProductCard 
             v-for="product in products.filteredProducts"
             :key="product.id"
             :product="product"
-            class="product-card"
+            class="product-card animate-slideInUp"
             @add-to-cart="handleAddToCart"
           />
         </div>
@@ -171,7 +137,7 @@ const clearNewFilter = () => {
   }
 }
 
-@keyframes slideInEmpty {
+@keyframes slideInUp {
   from {
     transform: translateY(20px);
     opacity: 0;
@@ -182,15 +148,41 @@ const clearNewFilter = () => {
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .header-animation {
   animation: slideInHeader 0.6s ease-out;
 }
 
 .empty-state-animation {
-  animation: slideInEmpty 0.6s ease-out;
+  animation: slideInUp 0.6s ease-out;
 }
 
 .product-card {
   will-change: opacity, transform;
+  animation: slideInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.product-card:nth-child(1) { animation-delay: 0ms; }
+.product-card:nth-child(2) { animation-delay: 80ms; }
+.product-card:nth-child(3) { animation-delay: 160ms; }
+.product-card:nth-child(4) { animation-delay: 240ms; }
+.product-card:nth-child(n+5) { animation-delay: calc((var(--index) - 4) * 80ms); }
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.6s ease-out forwards;
+  opacity: 0;
 }
 </style>

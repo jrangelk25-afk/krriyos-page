@@ -1,8 +1,7 @@
 import type { ApiRequest, ApiResponse } from '../types'
-const { PrismaClient } = require('@prisma/client')
+import { getPrisma } from '../../lib/prisma'
 import jwt from 'jsonwebtoken'
 
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 const verifyToken = (token: string) => {
@@ -37,6 +36,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   try {
+    const prisma = getPrisma()
     const { page = '1', limit = '50', adminUserId, action, tableName } = req.query
 
     const where: any = {}
@@ -76,7 +76,5 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   } catch (error) {
     console.error('Audit logs error:', error)
     return res.status(500).json({ error: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }

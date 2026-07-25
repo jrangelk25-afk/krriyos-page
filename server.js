@@ -27,8 +27,15 @@ const getPrismaInstance = () => {
 // Inicializar Prisma de forma asíncrona
 ;(async () => {
   const { getPrisma } = await import('./lib/prisma.ts')
+  const { getRedisClient } = await import('./lib/cache.ts')
+  
   cachedPrisma = getPrisma()
   console.log('✅ Prisma initialized successfully')
+  
+  // Initialize Redis in background (doesn't block startup if fails)
+  getRedisClient().catch(err => {
+    console.warn('⚠️  Redis initialization warning:', err)
+  })
 })().catch(err => {
   console.error('❌ Failed to initialize Prisma:', err)
   process.exit(1)
@@ -156,6 +163,9 @@ app.post('/api/auth/login', async (req, res) => {
 
 // ==================== DASHBOARD ====================
 app.get('/api/admin/dashboard', async (req, res) => {
+  const DASHBOARD_CACHE_KEY = 'dashboard:stats'
+  const DASHBOARD_CACHE_TTL = 5 * 60 // 5 minutos
+  
   try {
     const authHeader = req.headers.authorization
     if (!authHeader?.startsWith('Bearer ')) {
@@ -169,61 +179,65 @@ app.get('/api/admin/dashboard', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' })
     }
 
-    // Obtener estadísticas
-    const totalOrders = await prisma.order.count()
-    const totalCustomers = await prisma.customer.count()
-    const totalProducts = await prisma.product.count()
+    // Try to get from cache first
+    const { getCacheValue } = await import('./lib/cache.ts')
+    const cached = await getCacheValue(DASHBOARD_CACHE_KEY)
+    
+    if (cached) {
+      console.log('✓ Dashboard data from cache (age check)')
+      return res.status(200).json(cached)
+    }
 
-    // Ingresos totales
-    const orderStats = await prisma.order.aggregate({
-      _sum: {
-        total: true,
-      },
-    })
-
-    // Órdenes recientes
-    const recentOrders = await prisma.order.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        customer: true,
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    })
-
-    // Productos con bajo stock
-    const lowStockProducts = await prisma.product.findMany({
-      where: {
-        stock: {
-          lte: 5,
-        },
-      },
-      take: 5,
-      orderBy: { stock: 'asc' },
-    })
-
-    // Órdenes por mes (últimos 6 meses)
+    // Not in cache, fetch fresh data
     const sixMonthsAgo = new Date()
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-    const ordersByMonth = await prisma.order.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: {
-          gte: sixMonthsAgo,
+    // Parallelizar todas las queries para máximo performance
+    const [totalOrders, totalCustomers, totalProducts, orderStats, recentOrders, lowStockProducts, ordersByMonth] = await Promise.all([
+      prisma.order.count(),
+      prisma.customer.count(),
+      prisma.product.count(),
+      prisma.order.aggregate({
+        _sum: {
+          total: true,
         },
-      },
-      _sum: {
-        total: true,
-      },
-      _count: true,
-    })
+      }),
+      prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      }),
+      prisma.product.findMany({
+        where: {
+          stock: {
+            lte: 5,
+          },
+        },
+        take: 5,
+        orderBy: { stock: 'asc' },
+      }),
+      prisma.order.groupBy({
+        by: ['createdAt'],
+        where: {
+          createdAt: {
+            gte: sixMonthsAgo,
+          },
+        },
+        _sum: {
+          total: true,
+        },
+        _count: true,
+      }),
+    ])
 
-    return res.status(200).json({
+    const dashboardData = {
       stats: {
         totalOrders,
         totalCustomers,
@@ -233,7 +247,13 @@ app.get('/api/admin/dashboard', async (req, res) => {
       recentOrders,
       lowStockProducts,
       salesByMonth: ordersByMonth,
-    })
+    }
+
+    // Store in cache for future requests
+    const { setCacheValue } = await import('./lib/cache.ts')
+    await setCacheValue(DASHBOARD_CACHE_KEY, dashboardData, DASHBOARD_CACHE_TTL)
+
+    return res.status(200).json(dashboardData)
   } catch (error) {
     console.error('Dashboard error:', error)
     return res.status(500).json({ error: 'Internal server error' })
@@ -431,36 +451,20 @@ app.get('/api/admin/products/:id', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' })
     }
 
+    // OPTIMIZED: Batch queries instead of nested includes
+    // Query 1: Product with basic data (no nested includes)
     const product = await prisma.product.findUnique({
       where: { id: req.params.id },
       include: {
         category: true,
         colors: {
           orderBy: { displayOrder: 'asc' },
-          include: {
-            images: {
-              orderBy: { displayOrder: 'asc' },
-            },
-          },
         },
         images: {
           orderBy: { displayOrder: 'asc' },
         },
         sizes: {
-          include: {
-            colors: {
-              include: {
-                color: {
-                  select: {
-                    id: true,
-                    name: true,
-                    hexCode: true,
-                    displayOrder: true,
-                  },
-                },
-              },
-            },
-          },
+          orderBy: { id: 'asc' },
         },
       },
     })
@@ -469,7 +473,45 @@ app.get('/api/admin/products/:id', async (req, res) => {
       return res.status(404).json({ error: 'Product not found' })
     }
 
-    return res.status(200).json(product)
+    // Query 2: Batch fetch ALL size-color mappings (NO N+1)
+    const sizeIds = product.sizes.map(s => s.id)
+    const sizeColorMappings = await prisma.productSizeColor.findMany({
+      where: {
+        sizeId: { in: sizeIds },
+      },
+      include: {
+        color: {
+          select: {
+            id: true,
+            name: true,
+            hexCode: true,
+            displayOrder: true,
+          },
+        },
+      },
+    })
+
+    // Enrich sizes with colors (EN MEMORIA)
+    const enrichedSizes = product.sizes.map(size => {
+      const colors = sizeColorMappings
+        .filter(mapping => mapping.sizeId === size.id)
+        .map(mapping => ({
+          id: mapping.id,
+          sizeId: mapping.sizeId,
+          color: mapping.color,
+        }))
+
+      return {
+        ...size,
+        colors,
+      }
+    })
+
+    // Return optimized product
+    return res.status(200).json({
+      ...product,
+      sizes: enrichedSizes,
+    })
   } catch (error) {
     console.error('Product detail error:', error)
     return res.status(500).json({ error: 'Internal server error' })
@@ -534,11 +576,10 @@ app.put('/api/admin/products/:id', async (req, res) => {
     const { name, description, price, discountPercentage, categoryId, sku, stock, isNewArrival, isOutlet, isActive, image, images, sizes, colors } = req.body
     const updateData = {}
 
-    console.log('=== PUT PRODUCTS/:ID ===')
+    console.log('=== PUT PRODUCTS/:ID (OPTIMIZED with $transaction) ===')
     console.log('Product ID:', req.params.id)
-    console.log('Discount Percentage:', discountPercentage)
-    console.log('Sizes received:', sizes)
-    console.log('Colors received:', colors)
+    console.log('Sizes received:', sizes?.length || 0)
+    console.log('Colors received:', colors?.length || 0)
 
     // Helper para convertir booleanos
     const parseBoolean = (value) => {
@@ -557,33 +598,23 @@ app.put('/api/admin/products/:id', async (req, res) => {
     if (isOutlet !== undefined) updateData.isOutlet = parseBoolean(isOutlet)
     if (isActive !== undefined) updateData.isActive = parseBoolean(isActive)
 
-    // Manejar múltiples imágenes
+    // Manejar imágenes ANTES de transacción
     if (images && Array.isArray(images) && images.length > 0) {
-      console.log('📸 Images provided, checking if they changed...')
-      
-      // Obtener imágenes actuales
+      console.log('📸 Processing images...')
       const currentImages = await prisma.productImage.findMany({
         where: { productId: req.params.id },
         orderBy: { displayOrder: 'asc' }
       })
-      
-      console.log('Current images in DB:', currentImages.length)
-      console.log('New images provided:', images.length)
-      
-      // Comparar si realmente cambiaron
+
       const imagesChanged = currentImages.length !== images.length ||
         currentImages.some((currentImg, idx) => 
           currentImg.imageUrl !== images[idx]?.imageUrl
         )
-      
+
       if (imagesChanged) {
-        console.log('✏️ Images changed, updating...')
-        // Eliminar todas las imágenes existentes
         await prisma.productImage.deleteMany({
           where: { productId: req.params.id }
         })
-        
-        // Luego crear las nuevas imágenes
         await prisma.productImage.createMany({
           data: images.map((img, index) => ({
             productId: req.params.id,
@@ -593,17 +624,11 @@ app.put('/api/admin/products/:id', async (req, res) => {
             altText: name || `Product image ${index + 1}`,
           })),
         })
-        console.log('✅ Images updated successfully')
-      } else {
-        console.log('⏭️ Images unchanged, skipping update')
       }
     } else if (image) {
-      // Modo legado: una sola imagen
-      console.log('🖼️ Single image provided (legacy mode), updating...')
       await prisma.productImage.deleteMany({
         where: { productId: req.params.id }
       })
-      
       await prisma.productImage.create({
         data: {
           productId: req.params.id,
@@ -612,263 +637,201 @@ app.put('/api/admin/products/:id', async (req, res) => {
           altText: name || 'Product image',
         },
       })
-      console.log('✅ Single image updated successfully')
     }
 
-    // PRIMERO: PROCESAR COLORES y MAPEAR IDs TEMPORALES A IDs REALES
-    const colorIdMap = {} // Mapeo de IDs temporales 'new-xxx' a IDs reales
-    
+    // TRANSACTION: Usar $transaction para paralelizar operaciones
+    const transactionOps = []
+    const colorIdMap = {}
+
+    // 1. PROCESAR COLORES
     if (colors && Array.isArray(colors) && colors.length > 0) {
-      console.log('🎨 Processing colors:', JSON.stringify(colors, null, 2))
-      
-      try {
-        // Obtener colores existentes del producto
-        const existingProduct = await prisma.product.findUnique({
-          where: { id: req.params.id },
-          include: { colors: true },
-        })
+      console.log('🎨 Processing colors in transaction...')
+      const existingProduct = await prisma.product.findUnique({
+        where: { id: req.params.id },
+        include: { colors: true }
+      })
 
-        if (!existingProduct) {
-          throw new Error(`Product with id ${req.params.id} not found during color processing`)
-        }
+      if (!existingProduct) {
+        throw new Error(`Product with id ${req.params.id} not found`)
+      }
 
-        // IDs de colores que se mantienen (excluyendo los nuevos que empiezan con 'new-')
-        const incomingColorIds = new Set(colors.filter((c) => c.id && !c.id.startsWith('new-')).map((c) => c.id))
-        
-        // Eliminar colores que ya no existen
-        const colorsToDelete = existingProduct.colors.filter((c) => !incomingColorIds.has(c.id)) || []
-        if (colorsToDelete.length > 0) {
-          console.log('🗑️ Deleting colors:', colorsToDelete)
-          await prisma.productColor.deleteMany({
-            where: { id: { in: colorsToDelete.map((c) => c.id) } },
+      const incomingColorIds = new Set(colors.filter((c) => c.id && !c.id.startsWith('new-')).map((c) => c.id))
+      const colorsToDelete = existingProduct.colors.filter((c) => !incomingColorIds.has(c.id))
+
+      if (colorsToDelete.length > 0) {
+        transactionOps.push(
+          prisma.productColor.deleteMany({
+            where: { id: { in: colorsToDelete.map((c) => c.id) } }
           })
-          console.log(`✅ Deleted ${colorsToDelete.length} colors`)
-        }
+        )
+      }
 
-        // Crear/actualizar colores
-        for (const colorData of colors) {
-          console.log(`Processing color: id=${colorData.id}, starts with new-? ${colorData.id.startsWith('new-')}`)
-          
-          if (colorData.id.startsWith('new-')) {
-            // Nuevo color
-            console.log(`✨ Creating new color: ${colorData.name} (${colorData.hexCode})`)
-            const createdColor = await prisma.productColor.create({
+      for (const colorData of colors) {
+        if (colorData.id.startsWith('new-')) {
+          transactionOps.push(
+            prisma.productColor.create({
               data: {
                 productId: req.params.id,
                 name: colorData.name,
                 hexCode: colorData.hexCode,
                 displayOrder: colorData.displayOrder || 0,
                 isActive: true,
-              },
+              }
             })
-            console.log('✅ Color created successfully:', createdColor)
-            // Mapear ID temporal a ID real
-            colorIdMap[colorData.id] = createdColor.id
-            console.log(`📍 Mapped temp ID ${colorData.id} to real ID ${createdColor.id}`)
-          } else {
-            // Actualizar color existente
-            console.log(`📝 Updating existing color: ${colorData.id}`)
-            const updatedColor = await prisma.productColor.update({
+          )
+        } else {
+          transactionOps.push(
+            prisma.productColor.update({
               where: { id: colorData.id },
               data: {
                 name: colorData.name,
                 hexCode: colorData.hexCode,
                 displayOrder: colorData.displayOrder || 0,
-              },
+              }
             })
-            console.log('✅ Color updated successfully:', updatedColor)
-            // El ID ya es real, no necesita mapeo
-            colorIdMap[colorData.id] = colorData.id
-          }
+          )
         }
-        console.log('✅ All colors processed successfully')
-        console.log('Color ID Map:', colorIdMap)
-      } catch (colorError) {
-        console.error('❌ ERROR PROCESSING COLORS:', colorError)
-        throw new Error(`Color processing failed: ${colorError.message}`)
       }
-    } else {
-      console.log('ℹ️ No colors to process. colors:', colors)
     }
 
-    // SEGUNDO: PROCESAR TALLAS - antes de actualizar el producto
+    // 2. PROCESAR TALLAS
     let totalStockFromSizes = 0
-    
     if (sizes && Array.isArray(sizes) && sizes.length > 0) {
-      console.log('Processing sizes:', sizes)
-      
-      try {
-        // Obtener tallas existentes
-        const existingProduct = await prisma.product.findUnique({
-          where: { id: req.params.id },
-          include: { sizes: true },
-        })
+      console.log('📏 Processing sizes in transaction...')
+      const existingProduct = await prisma.product.findUnique({
+        where: { id: req.params.id },
+        include: { sizes: true }
+      })
 
-        if (!existingProduct) {
-          throw new Error(`Product with id ${req.params.id} not found`)
-        }
+      if (!existingProduct) {
+        throw new Error(`Product with id ${req.params.id} not found`)
+      }
 
-        // IDs de tallas que se mantienen
-        const incomingSizeIds = new Set(sizes.filter((s) => s.id && !s.id.startsWith('new-')).map((s) => s.id))
-        
-        // Eliminar tallas que ya no existen
-        const sizesToDelete = existingProduct.sizes.filter((s) => !incomingSizeIds.has(s.id)) || []
-        if (sizesToDelete.length > 0) {
-          console.log('Deleting sizes:', sizesToDelete)
-          await prisma.productSize.deleteMany({
-            where: { id: { in: sizesToDelete.map((s) => s.id) } },
+      const incomingSizeIds = new Set(sizes.filter((s) => s.id && !s.id.startsWith('new-')).map((s) => s.id))
+      const sizesToDelete = existingProduct.sizes.filter((s) => !incomingSizeIds.has(s.id))
+
+      if (sizesToDelete.length > 0) {
+        transactionOps.push(
+          prisma.productSize.deleteMany({
+            where: { id: { in: sizesToDelete.map((s) => s.id) } }
           })
-        }
+        )
+      }
 
-        // Crear/actualizar tallas
-        for (const sizeData of sizes) {
-          // Extraer el stock - puede venir como 'stock' o como otra propiedad
-          const stockValue = sizeData.stock !== undefined ? sizeData.stock : (sizeData.quantity !== undefined ? sizeData.quantity : 0)
-          const parsedStock = parseInt(String(stockValue)) || 0
-          
-          console.log(`Processing size: ${sizeData.size}, stock: ${stockValue} (parsed: ${parsedStock}), id: ${sizeData.id}`)
-          
-          let createdOrUpdatedSizeId = ''
-          
-          if (sizeData.id.startsWith('new-')) {
-            // Nueva talla
-            console.log(`Creating new size: ${sizeData.size} with stock ${parsedStock}`)
-            const createdSize = await prisma.productSize.create({
+      for (const sizeData of sizes) {
+        const stockValue = sizeData.stock !== undefined ? sizeData.stock : (sizeData.quantity !== undefined ? sizeData.quantity : 0)
+        const parsedStock = parseInt(String(stockValue)) || 0
+        totalStockFromSizes += parsedStock
+
+        if (sizeData.id.startsWith('new-')) {
+          transactionOps.push(
+            prisma.productSize.create({
               data: {
                 productId: req.params.id,
                 size: sizeData.size,
                 stock: parsedStock,
-              },
+              }
             })
-            console.log('Size created successfully:', createdSize)
-            createdOrUpdatedSizeId = createdSize.id
-            totalStockFromSizes += parsedStock
-          } else {
-            // Actualizar talla existente
-            console.log(`Updating existing size: ${sizeData.id} with stock ${parsedStock}`)
-            
-            // Verificar que la talla existe antes de actualizar
-            const existingSize = await prisma.productSize.findUnique({
-              where: { id: sizeData.id }
+          )
+        } else {
+          transactionOps.push(
+            prisma.productSize.update({
+              where: { id: sizeData.id },
+              data: { stock: parsedStock }
             })
-            
-            if (!existingSize) {
-              console.warn(`Size ${sizeData.id} does not exist, creating it instead`)
-              // Si no existe, crearla
-              const createdSize = await prisma.productSize.create({
-                data: {
-                  productId: req.params.id,
-                  size: sizeData.size,
-                  stock: parsedStock,
-                },
-              })
-              console.log('Size created successfully (was missing):', createdSize)
-              createdOrUpdatedSizeId = createdSize.id
-            } else {
-              const updatedSize = await prisma.productSize.update({
-                where: { id: sizeData.id },
-                data: {
-                  stock: parsedStock,
-                },
-              })
-              console.log('Size updated successfully:', updatedSize)
-              createdOrUpdatedSizeId = updatedSize.id
-            }
-            totalStockFromSizes += parsedStock
-          }
+          )
+        }
+      }
 
-          // Procesar colores de la talla
-          if (sizeData.colorIds && Array.isArray(sizeData.colorIds) && sizeData.colorIds.length > 0) {
-            console.log(`Processing colors for size ${sizeData.size}:`, sizeData.colorIds)
-            console.log(`createdOrUpdatedSizeId: ${createdOrUpdatedSizeId}`)
+      updateData.stock = totalStockFromSizes
+    }
 
-            // Eliminar relaciones existentes de esta talla
-            await prisma.productSizeColor.deleteMany({
-              where: { sizeId: createdOrUpdatedSizeId }
-            })
-
-            // Crear nuevas relaciones para cada color
-            for (const tempOrRealColorId of sizeData.colorIds) {
-              // Si el colorId es temporal (new-xxx), usar el ID real mapeado
-              const realColorId = colorIdMap[tempOrRealColorId] || tempOrRealColorId
-              console.log(`Linking color: temp/real: ${tempOrRealColorId} -> ${realColorId}`)
-              console.log(`ColorIdMap keys:`, Object.keys(colorIdMap))
-              
-              try {
-                const sizeColorRelation = await prisma.productSizeColor.create({
-                  data: {
-                    sizeId: createdOrUpdatedSizeId,
-                    colorId: realColorId,
-                  },
-                })
-                console.log(`✅ Color ${realColorId} linked to size ${sizeData.size}:`, sizeColorRelation)
-              } catch (linkError) {
-                console.error(`❌ ERROR linking color ${realColorId} to size ${sizeData.size}:`, linkError.message)
-                console.error(`Link error details:`, linkError)
-                throw linkError
+    // 3. ACTUALIZAR PRODUCTO
+    transactionOps.push(
+      prisma.product.update({
+        where: { id: req.params.id },
+        data: updateData,
+        include: {
+          category: true,
+          colors: { orderBy: { displayOrder: 'asc' } },
+          images: { orderBy: { displayOrder: 'asc' } },
+          sizes: {
+            include: {
+              colors: {
+                include: {
+                  color: {
+                    select: {
+                      id: true,
+                      name: true,
+                      hexCode: true,
+                      displayOrder: true,
+                    }
+                  }
+                }
               }
             }
-            
-            // Verificar que se guardaron las relaciones
-            const savedRelations = await prisma.productSizeColor.findMany({
-              where: { sizeId: createdOrUpdatedSizeId }
-            })
-            console.log(`✅ Verified relations for size ${sizeData.size}:`, savedRelations)
-          } else {
-            // Si no hay colores, eliminar las relaciones existentes
-            await prisma.productSizeColor.deleteMany({
-              where: { sizeId: createdOrUpdatedSizeId }
-            })
-            console.log(`No colors for size ${sizeData.size}, cleared existing relationships`)
           }
         }
-        
-        console.log('Total stock from sizes:', totalStockFromSizes)
-        // Usar el stock calculado de las tallas
-        updateData.stock = totalStockFromSizes
-        
-      } catch (sizeError) {
-        console.error('ERROR PROCESSING SIZES:', sizeError.message)
-        console.error('Size error stack:', sizeError.stack)
-        throw sizeError
+      })
+    )
+
+    // Ejecutar transacción
+    console.log('⚡ Executing transaction with', transactionOps.length, 'operations...')
+    const results = await prisma.$transaction(transactionOps)
+    const product = results[results.length - 1] // El update es el último
+
+    // Procesar size-colors DESPUÉS de transacción
+    if (sizes && Array.isArray(sizes) && sizes.length > 0) {
+      console.log('🔗 Linking sizes and colors...')
+
+      const allColors = await prisma.productColor.findMany({
+        where: { productId: req.params.id }
+      })
+
+      for (const colorData of colors) {
+        if (colorData.id.startsWith('new-')) {
+          const newColor = allColors.find((c) => c.name === colorData.name && c.hexCode === colorData.hexCode)
+          if (newColor) {
+            colorIdMap[colorData.id] = newColor.id
+          }
+        } else {
+          colorIdMap[colorData.id] = colorData.id
+        }
+      }
+
+      const sizeColorOps = []
+      for (const sizeData of sizes) {
+        if (sizeData.colorIds && Array.isArray(sizeData.colorIds) && sizeData.colorIds.length > 0) {
+          const existingSize = await prisma.productSize.findUnique({
+            where: { id: sizeData.id }
+          })
+
+          if (existingSize) {
+            await prisma.productSizeColor.deleteMany({
+              where: { sizeId: sizeData.id }
+            })
+
+            for (const tempOrRealColorId of sizeData.colorIds) {
+              const realColorId = colorIdMap[tempOrRealColorId] || tempOrRealColorId
+              sizeColorOps.push(
+                prisma.productSizeColor.create({
+                  data: {
+                    sizeId: sizeData.id,
+                    colorId: realColorId
+                  }
+                })
+              )
+            }
+          }
+        }
+      }
+
+      if (sizeColorOps.length > 0) {
+        await prisma.$transaction(sizeColorOps)
       }
     }
 
-    const product = await prisma.product.update({
-      where: { id: req.params.id },
-      data: updateData,
-      include: {
-        category: true,
-        colors: {
-          orderBy: { displayOrder: 'asc' },
-        },
-        images: {
-          orderBy: { displayOrder: 'asc' },
-        },
-        sizes: {
-          include: {
-            colors: {
-              include: {
-                color: {
-                  select: {
-                    id: true,
-                    name: true,
-                    hexCode: true,
-                    displayOrder: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
-
     console.log('✅ Product updated successfully')
-    console.log('Product colors in response:', product.colors)
-    console.log('Product colors count:', product.colors?.length || 0)
-    console.log('Product sizes in response:', product.sizes)
-
     return res.status(200).json(product)
   } catch (error) {
     console.error('Product update error:', error)
@@ -1822,8 +1785,28 @@ app.get('/api/admin/customers', async (req, res) => {
 })
 
 // ==================== ERROR HANDLING ====================
-// Servir archivos estáticos del frontend
-app.use(express.static(join(__dirname, 'dist')))
+// Servir archivos estáticos del frontend con estrategia de caching
+app.use(express.static(join(__dirname, 'dist'), {
+  maxAge: '1d',        // Cache por 1 día para assets (JS, CSS, images)
+  etag: false,         // Deshabilitar ETag para ahorrar CPU
+  setHeaders: (res, path) => {
+    // Para HTML: cache más corto (1 hora) para que cambios se vean rápido
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate')
+      res.setHeader('X-Content-Type-Options', 'nosniff')
+      return
+    }
+    // Para assets con hash (vite los genera con hash): cache largo e inmutable
+    if (path.match(/\.[a-f0-9]{8}\.(js|css|woff2|woff|ttf|eot|svg)$/i)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+      return
+    }
+    // Para assets normales: cache 7 días
+    if (path.match(/\.(js|css|woff2|woff|ttf|eot|svg|png|jpg|jpeg|gif|webp)$/i)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800')
+    }
+  }
+}))
 
 // Ruta fallback para SPA - servir index.html para todas las rutas no-API
 app.get('*', (req, res) => {
@@ -1842,7 +1825,21 @@ app.listen(PORT, () => {
   console.log(`📌 API endpoints available at http://localhost:${PORT}/api`)
 })
 
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...')
+  const { disconnectPrisma } = await import('./lib/prisma.ts')
+  const { disconnectRedis } = await import('./lib/cache.ts')
+  await disconnectPrisma()
+  await disconnectRedis()
+  process.exit(0)
+})
+
 process.on('SIGINT', async () => {
-  await prisma.$disconnect()
+  console.log('SIGINT received, shutting down gracefully...')
+  const { disconnectPrisma } = await import('./lib/prisma.ts')
+  const { disconnectRedis } = await import('./lib/cache.ts')
+  await disconnectPrisma()
+  await disconnectRedis()
   process.exit(0)
 })

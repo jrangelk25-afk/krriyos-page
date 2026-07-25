@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useProducts } from '../composables/useProducts'
-import { useGSAP } from '../composables/useGSAP'
 import ProductCard from './ProductCard.vue'
 import { useCart } from '../composables/useCart'
 
 const products = useProducts()
-const gsap = useGSAP()
 const cart = useCart()
 
 onMounted(async () => {
@@ -14,12 +12,6 @@ onMounted(async () => {
   if (products.allProducts.length === 0) {
     await products.initializeData()
   }
-
-  gsap.staggerElements('.product-card', {
-    duration: 0.6,
-    stagger: 0.1,
-    delay: 0.2
-  })
 })
 
 const handleAddToCart = (product: any) => {

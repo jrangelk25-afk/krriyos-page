@@ -1,7 +1,7 @@
 import type { ApiRequest, ApiResponse } from '../../types';
-import { PrismaClient } from '@prisma/client';
+import { getPrisma } from '../../../lib/prisma';
 
-const prisma = new PrismaClient();
+const prisma = getPrisma();
 
 /**
  * GET /api/public/products/[id]/sizes-by-color?colorId=abc-123
