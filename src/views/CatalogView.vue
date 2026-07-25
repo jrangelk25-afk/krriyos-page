@@ -3,6 +3,7 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
+import { useMetaTags } from '../composables/useMeta'
 import ProductCard from '../components/ProductCard.vue'
 import CatalogFilters from '../components/CatalogFilters.vue'
 
@@ -17,6 +18,17 @@ const showNewArrivals = ref(false)
 const isLoading = ref(false)
 const componentMounted = ref(false)
 const transitionKey = ref(0)
+
+// Actualizar meta tags para el catálogo
+onMounted(() => {
+  useMetaTags({
+    title: 'Catálogo | krriyos - Orgullosos de Caminar Contigo',
+    description: 'Explora nuestra completa colección de sneakers, urban wear y botas premium. Encuentra el calzado perfecto para cada ocasión.',
+    image: '/logo.webp',
+    url: '/catalogo',
+    type: 'website',
+  })
+})
 
 onMounted(async () => {
   // SIEMPRE limpiar filtros al entrar a la vista del catálogo

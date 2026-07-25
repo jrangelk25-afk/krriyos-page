@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
+import { useMetaTags } from '../composables/useMeta'
 import ProductCard from '../components/ProductCard.vue'
 
 const products = useProducts()
@@ -13,6 +14,15 @@ const componentMounted = ref(false)
 const transitionKey = ref(0)
 
 onMounted(async () => {
+  // Actualizar meta tags para nuevos
+  useMetaTags({
+    title: 'Nuevos | krriyos - Últimas Llegadas en Calzado Premium',
+    description: 'Descubre los últimos lanzamientos en sneakers, urban wear y botas. Nuevos estilos cada semana.',
+    image: '/logo.webp',
+    url: '/nuevos',
+    type: 'website',
+  })
+
   // SIEMPRE limpiar filtros al entrar a la vista de nuevos
   products.clearFilters()
   

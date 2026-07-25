@@ -1,5 +1,17 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useMetaTags } from '../composables/useMeta'
 import Header from '@/components/Header.vue'
+
+onMounted(() => {
+  useMetaTags({
+    title: 'Nosotros | krriyos - Orgullosos de Caminar Contigo',
+    description: 'Conoce la historia de krriyos, nuestra misión y valores. Descubre por qué somos líderes en calzado premium.',
+    image: '/logo.webp',
+    url: '/nosotros',
+    type: 'website',
+  })
+})
 </script>
 
 <template>

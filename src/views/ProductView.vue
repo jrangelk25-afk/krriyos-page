@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
+import { useMetaTags } from '../composables/useMeta'
 import ProductSizeColorMatrix from '../components/ProductSizeColorMatrix.vue'
 
 const route = useRoute()
@@ -32,6 +33,20 @@ onMounted(async () => {
     
     if (!product.value) {
       router.push('/catalogo')
+    } else {
+      // Actualizar meta tags con información del producto
+      const imageUrl = product.value.imagenes?.[0] || '/logo.webp'
+      const description = product.value.descripcion 
+        ? product.value.descripcion.split('\n')[0].substring(0, 160)
+        : `${product.value.nombre} - Calzado premium de Krriyos`
+
+      useMetaTags({
+        title: `${product.value.nombre} | krriyos - Orgullosos de Caminar Contigo`,
+        description: description,
+        image: imageUrl,
+        url: `/producto/${product.value.id}`,
+        type: 'product',
+      })
     }
   } catch (error) {
     console.error('Error loading product:', error)
