@@ -2,6 +2,7 @@
 import type { Product } from '../types'
 import { useRouter } from 'vue-router'
 import { computed } from 'vue'
+import MagnifierImage from './MagnifierImage.vue'
 
 const props = defineProps<{
   product: Product
@@ -50,12 +51,13 @@ const descuentoAplicado = computed(() => {
     class="group cursor-pointer product-card"
   >
     <!-- Image Container -->
-    <div class="bg-surface-product aspect-[4/5] overflow-hidden mb-4 relative">
-      <img 
+    <div class="bg-surface-product aspect-[4/5] overflow-hidden mb-4 relative group">
+      <MagnifierImage 
         :src="product.imagenes[0]"
         :alt="product.nombre"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        loading="lazy"
+        :zoom-level="1.8"
+        :magnifier-size="80"
+        container-class="w-full h-full"
       />
 
       <!-- Badges -->

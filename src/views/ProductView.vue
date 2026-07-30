@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
 import { useMetaTags } from '../composables/useMeta'
+import { useMagnifier } from '../composables/useMagnifier'
 import ProductSizeColorMatrix from '../components/ProductSizeColorMatrix.vue'
 
 const route = useRoute()
@@ -14,6 +15,9 @@ const cart = useCart()
 const product = ref<any | null>(null)
 const isLoading = ref(false)
 const currentImageIndex = ref<number>(0)
+
+// Inicializar magnifier para imagen principal
+const mainMagnifier = useMagnifier(2.5)
 
 // Cargar producto del servidor (para obtener todos los colores correctamente)
 onMounted(async () => {
@@ -133,14 +137,33 @@ const descuentoAplicado = computed(() => {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
         
         <!-- LEFT: LARGE IMAGE GALLERY (1/2) -->
-        <div class="flex flex-col gap-3 order-2 lg:order-1">
+        <div class="flex flex-col gap-3 order-1 lg:order-1">
           <!-- Main Image -->
-          <div class="aspect-[1/1.2] bg-surface-product rounded-xl overflow-hidden relative shadow-lg group">
+          <div 
+            class="aspect-[1/1.2] bg-surface-product rounded-xl overflow-hidden relative shadow-lg group"
+            @mousemove="mainMagnifier.handleMouseMove"
+            @mouseenter="mainMagnifier.handleMouseEnter"
+            @mouseleave="mainMagnifier.handleMouseLeave"
+          >
             <img 
               :src="product.imagenes[currentImageIndex]"
               :alt="product.nombre"
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              class="w-full h-full object-cover"
             />
+            
+            <!-- Magnifier Glass -->
+            <div 
+              v-if="mainMagnifier.showMagnifier.value"
+              class="magnifier-glass absolute pointer-events-none rounded-full border-2 border-primary/70 overflow-hidden shadow-lg"
+              :style="[
+                mainMagnifier.magnifierStyle.value,
+                mainMagnifier.zoomedImageStyle.value,
+                {
+                  backgroundImage: `url('${product.imagenes[currentImageIndex]}')`
+                }
+              ]"
+            >
+            </div>
             
             <!-- Image navigation -->
             <div v-if="product.imagenes.length > 1" class="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -187,7 +210,7 @@ const descuentoAplicado = computed(() => {
         </div>
 
         <!-- RIGHT: DETAILS + SELECTOR (1/2) -->
-        <div class="flex flex-col gap-4 order-1 lg:order-2">
+        <div class="flex flex-col gap-4 order-2 lg:order-2">
           
           <!-- Loading indicator -->
           <div v-if="isLoading" class="flex items-center justify-center py-8">
@@ -269,6 +292,18 @@ const descuentoAplicado = computed(() => {
               :product-name="product.nombre"
               @add-to-cart="handleAddToCart"
             />
+
+            <!-- Size Chart Below Selector -->
+            <div class="space-y-2 pt-2">
+              <p class="font-label-xs text-xs text-on-surface-variant uppercase mb-2">Tabla de Tallas</p>
+              <div class="relative overflow-hidden rounded-lg border-2 border-outline-variant">
+                <img 
+                  src="/tabla_tallas.webp"
+                  alt="Tabla de tallas"
+                  class="w-full h-auto object-contain bg-surface-product max-h-48"
+                />
+              </div>
+            </div>
           </div>
 
           <div v-else-if="!isLoading" class="bg-surface-bright rounded-lg p-4 border-2 border-error/20 text-center">
@@ -295,3 +330,24 @@ const descuentoAplicado = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.magnifier-glass {
+  animation: magnifierPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 
+    0 0 20px rgba(0, 0, 0, 0.4),
+    inset 0 0 10px rgba(255, 255, 255, 0.1),
+    0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+@keyframes magnifierPop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+</style>
