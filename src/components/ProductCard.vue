@@ -2,7 +2,6 @@
 import type { Product } from '../types'
 import { useRouter } from 'vue-router'
 import { computed } from 'vue'
-import MagnifierImage from './MagnifierImage.vue'
 
 const props = defineProps<{
   product: Product
@@ -52,12 +51,10 @@ const descuentoAplicado = computed(() => {
   >
     <!-- Image Container -->
     <div class="bg-surface-product aspect-[4/5] overflow-hidden mb-4 relative group">
-      <MagnifierImage 
+      <img 
         :src="product.imagenes[0]"
         :alt="product.nombre"
-        :zoom-level="1.8"
-        :magnifier-size="80"
-        container-class="w-full h-full"
+        class="w-full h-full object-cover"
       />
 
       <!-- Badges -->
